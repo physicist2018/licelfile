@@ -9,6 +9,7 @@ import (
 func main() {
 
 	a := licelformat.NewLicelPack("b*.*")
+
 	v := licelformat.SelectCertainWavelength2(&a, true, 408)
 	fmt.Println(v)
 	for key := range a {

@@ -2,6 +2,7 @@ package licelformat
 
 import (
 	"bufio"
+	"encoding/binary"
 	"io"
 	"log"
 	"os"
@@ -18,60 +19,61 @@ const (
 	LICEL_MAX_RESERVED   = 3
 )
 
-// LicelProfile - представляет отдельный измерительный канал
+// LicelProfile — структура, представляющая измерительный канал
 type LicelProfile struct {
-	Active, Photon bool
-	LaserType      int64
-	NDataPoints    int64
-	reserved       [LICEL_MAX_RESERVED]int64
-	HighVoltage    int64
-	BinWidth       float64
-	Wavelength     float64
-	Polarization   string
-	BinShift       int64
-	DecBinShift    int64
-	AdcBits        int64
-	NShots         int64
-	DiscrLevel     float64
-	DeviceID       string
-	NCrate         int64
-	Data           []float64
+	Active, Photon bool                      // Активность канала и тип измерения (фотоны или нет)
+	LaserType      int64                     // Тип лазера
+	NDataPoints    int64                     // Количество данных
+	Reserved       [LICEL_MAX_RESERVED]int64 // Резервные значения
+	HighVoltage    int64                     // Напряжение
+	BinWidth       float64                   // Ширина бина
+	Wavelength     float64                   // Длина волны
+	Polarization   string                    // Поляризация
+	BinShift       int64                     // Сдвиг бина
+	DecBinShift    int64                     // Децибельный сдвиг
+	AdcBits        int64                     // Биты АЦП
+	NShots         int64                     // Количество импульсов
+	DiscrLevel     float64                   // Уровень дискриминации
+	DeviceID       string                    // Идентификатор устройства
+	NCrate         int64                     // Частота дискретизации
+	Data           []float64                 // Данные
 }
 
 type LicelProfilesList []LicelProfile
 
-// LicelFile - Структура - единичное измерение на дидаре
+// LicelFile — структура, представляющая единичное измерение
 type LicelFile struct {
-	MeasurementSite       string
-	MeasurementStartTime  time.Time
-	MeasurementStopTime   time.Time
-	AltitudeAboveSeaLevel float64
-	Longitude             float64
-	Latitude              float64
-	Zenith                float64
-	Laser1NShots          int64
-	Laser1Freq            int64
-	Laser2NShots          int64
-	Laser2Freq            int64
-	NDatasets             int64
-	Laser3NShots          int64
-	Laser3Freq            int64
-	FileLoaded            bool
-	Profiles              LicelProfilesList
+	MeasurementSite       string            // Место измерения
+	MeasurementStartTime  time.Time         // Время начала измерения
+	MeasurementStopTime   time.Time         // Время окончания измерения
+	AltitudeAboveSeaLevel float64           // Высота над уровнем моря
+	Longitude             float64           // Долгота
+	Latitude              float64           // Широта
+	Zenith                float64           // Зенит
+	Laser1NShots          int64             // Количество импульсов лазера 1
+	Laser1Freq            int64             // Частота лазера 1
+	Laser2NShots          int64             // Количество импульсов лазера 2
+	Laser2Freq            int64             // Частота лазера 2
+	NDatasets             int64             // Количество наборов данных
+	Laser3NShots          int64             // Количество импульсов лазера 3
+	Laser3Freq            int64             // Частота лазера 3
+	FileLoaded            bool              // Файл загружен
+	Profiles              LicelProfilesList // Список профилей
 }
 
 type LicelPack map[string]LicelFile
 
-func NewLicelProfile(line string) (profile LicelProfile) {
-	items := strings.Split(line, " ")
-	wvlpol := strings.Split(items[7], ".")
-	NDataPoints := str2Int(items[3])
-	profile = LicelProfile{
+// NewLicelProfile — парсит строку профиля и возвращает LicelProfile
+func NewLicelProfile(line string) LicelProfile {
+	items := strings.Fields(line)
+	wvlpol := strings.SplitN(items[7], ".", 2)
+
+	return LicelProfile{
 		Active:       str2Bool(items[0]),
 		Photon:       str2Bool(items[1]),
 		LaserType:    str2Int(items[2]),
-		NDataPoints:  NDataPoints,
-		reserved:     [3]int64{str2Int(items[4]), str2Int(items[8]), str2Int(items[9])},
+		NDataPoints:  str2Int(items[3]),
+		Reserved:     [3]int64{str2Int(items[4]), str2Int(items[8]), str2Int(items[9])},
 		HighVoltage:  str2Int(items[5]),
 		BinWidth:     str2Float(items[6]),
 		Wavelength:   str2Float(wvlpol[0]),
@@ -83,166 +85,154 @@ func NewLicelProfile(line string) (profile LicelProfile) {
 		DiscrLevel:   str2Float(items[14]),
 		DeviceID:     items[15][:2],
 		NCrate:       str2Int(items[15][2:]),
-		Data:         nil, //make([]int32, NDataPoints),
 	}
-	return
 }
 
-// LicelFile - загружает содержимое файла измерений в память
-func LoadLicelFile(fname string) (licf LicelFile) {
-
+// LoadLicelFile — загружает LicelFile из указанного файла по пути fname
+func LoadLicelFile(fname string) LicelFile {
 	f, err := os.Open(fname)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	defer func() {
-		if err = f.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
+	defer f.Close()
 
 	r := bufio.NewReader(f)
-	licf = LicelFile{}
+	var licf LicelFile
 
-	if header_line, err := r.ReadString(10); err == nil {
-		header_line = header_line[:len(header_line)-2]
-		//licf.MeasurementSite = strings.Trim(header_line, " ")
-	}
+	// Пропустить первую строку (обычно пустую или с ненужной информацией)
+	readAndTrimLine(r)
 
-	if header_line, err := r.ReadString(10); err == nil {
-		header_line = header_line[:len(header_line)-2]
-		tmp := strings.Split(header_line, " ")
-		licf.MeasurementSite = tmp[0]
-		licf.MeasurementStartTime, err = timefmt.Strptime(tmp[2]+" "+tmp[3], "%d/%m/%Y %H:%M:%S")
-		if err != nil {
-			log.Fatal(err)
-		}
+	// Вторая строка: базовая информация
+	header := readAndTrimLine(r)
+	tmp := strings.Fields(header)
 
-		licf.MeasurementStopTime, err = timefmt.Strptime(tmp[4]+" "+tmp[5], "%d/%m/%Y %H:%M:%S")
-		if err != nil {
-			log.Fatal(err)
-		}
+	licf.MeasurementSite = tmp[0]
+	licf.MeasurementStartTime = parseTime(tmp[1] + " " + tmp[2])
+	licf.MeasurementStopTime = parseTime(tmp[3] + " " + tmp[4])
+	licf.AltitudeAboveSeaLevel = str2Float(tmp[5])
+	licf.Longitude = str2Float(tmp[6])
+	licf.Latitude = str2Float(tmp[7])
+	licf.Zenith = str2Float(tmp[8])
 
-		licf.AltitudeAboveSeaLevel = str2Float(tmp[6])
-		licf.Longitude = str2Float(tmp[7])
-		licf.Latitude = str2Float(tmp[8])
-		licf.Zenith = str2Float(tmp[9])
-	}
+	// Третья строка: параметры лазеров
+	header = readAndTrimLine(r)
+	tmp = strings.Fields(header)
+	licf.Laser1NShots = str2Int(tmp[0])
+	licf.Laser1Freq = str2Int(tmp[1])
+	licf.Laser2NShots = str2Int(tmp[2])
+	licf.Laser2Freq = str2Int(tmp[3])
+	licf.NDatasets = str2Int(tmp[4])
+	licf.Laser3NShots = str2Int(tmp[5])
+	licf.Laser3Freq = str2Int(tmp[6])
 
-	if header_line, err := r.ReadString(10); err == nil {
-		header_line = header_line[:len(header_line)-2]
-		tmp := strings.Split(header_line, " ")
-		//licf.MeasurementSite = strings.Trim(header_line, " ")
-		licf.Laser1NShots = str2Int(tmp[1])
-		licf.Laser1Freq = str2Int(tmp[2])
-		licf.Laser2NShots = str2Int(tmp[3])
-		licf.Laser2Freq = str2Int(tmp[4])
-		licf.NDatasets = str2Int(tmp[5])
-		licf.Laser3NShots = str2Int(tmp[6])
-		licf.Laser3Freq = str2Int(tmp[7])
-	}
-
+	// Профили
 	licf.Profiles = make(LicelProfilesList, licf.NDatasets)
 	for i := int64(0); i < licf.NDatasets; i++ {
-		if header_line, err := r.ReadString(10); err == nil {
-			header_line = strings.Trim(header_line[:len(header_line)-1], " ")
-			licf.Profiles[i] = NewLicelProfile(header_line)
-		}
+		header = readAndTrimLine(r)
+		licf.Profiles[i] = NewLicelProfile(header)
 	}
 
-	crlf := make([]byte, 2)
-	r.Read(crlf)
-	//fmt.Printf("CRLF=[%d,%d]\n", crlf[0], crlf[1])
+	// После заголовков — бинарные данные
+	skipCRLF(r)
+
 	for i := int64(0); i < licf.NDatasets; i++ {
-		pr_tmp := make([]byte, licf.Profiles[i].NDataPoints*4)
-
-		if n, err := io.ReadFull(r, pr_tmp); err != nil {
-			log.Fatal(n, err)
+		prTmp := make([]byte, licf.Profiles[i].NDataPoints*4)
+		if _, err := io.ReadFull(r, prTmp); err != nil {
+			log.Fatal(err)
 		}
-
-		licf.Profiles[i].Data = bytes2Float64Arr(pr_tmp)
-		r.Read(crlf)
-		//fmt.Printf("CRLF=[%d,%d]\n", crlf[0], crlf[1])
+		licf.Profiles[i].Data = bytesToFloat64Array(prTmp)
+		skipCRLF(r)
 	}
 
-	return
+	licf.FileLoaded = true
+	return licf
 }
 
+// readAndTrimLine — читает строку из буфера и удаляет символы пробела справа
+func readAndTrimLine(r *bufio.Reader) string {
+	line, err := r.ReadString('\n')
+	if err != nil {
+		log.Fatal(err)
+	}
+	return strings.TrimRight(line, "\t\r ")
+}
+
+// skipCRLF — пропускает символы CR и LF
+func skipCRLF(r *bufio.Reader) {
+	crlf := make([]byte, 2)
+	if _, err := io.ReadFull(r, crlf); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// parseTime — парсит строку с датой и временем в формате "dd/mm/yyyy hh:mm:ss"
+func parseTime(s string) time.Time {
+	t, err := timefmt.Strptime(s, "%d/%m/%Y %H:%M:%S")
+	if err != nil {
+		log.Fatal(err)
+	}
+	return t
+}
+
+// str2Bool — преобразует строку в булево значение
 func str2Bool(str string) bool {
-	if v, err := strconv.ParseBool(str); err == nil {
-		return v
-	}
-	return false
+	v, _ := strconv.ParseBool(str)
+	return v
 }
 
+// str2Int — преобразует строку в целое число
 func str2Int(str string) int64 {
-	if v, err := strconv.ParseInt(str, 10, 32); err == nil {
-		return v
-	}
-	return -9999
+	v, _ := strconv.ParseInt(str, 10, 64)
+	return v
 }
 
+// str2Float — преобразует строку в число с плавающей запятой
 func str2Float(str string) float64 {
-	if v, err := strconv.ParseFloat(str, 32); err == nil {
-		return v
-	}
-	return -9999.999
+	v, _ := strconv.ParseFloat(str, 64)
+	return v
 }
 
-func bytes2Int32(b []byte) (r int32) {
-	r = 0
-	if len(b) >= 4 {
-		r |= int32(b[0])
-		r |= int32(b[1]) << 8
-		r |= int32(b[2]) << 16
-		r |= int32(b[3]) << 24
+// bytesToFloat64Array — преобразует массив байт в массив float64
+func bytesToFloat64Array(b []byte) []float64 {
+	n := len(b) / 4
+	arr := make([]float64, n)
+	for i := 0; i < n; i++ {
+		arr[i] = float64(int32(binary.LittleEndian.Uint32(b[i*4 : (i+1)*4])))
 	}
-	return
+	return arr
 }
 
-func bytes2Int32Arr(b []byte) (r []int32) {
-	i32len := int32(len(b) / 4)
-	r = make([]int32, i32len)
-	for i := int32(0); i < i32len; i++ {
-		r[i] = bytes2Int32(b[i*4 : (i+1)*4])
+// NewLicelPack — загружает несколько файлов, соответствующих маске
+func NewLicelPack(mask string) LicelPack {
+	pack := make(LicelPack)
+	files, err := filepath.Glob(mask)
+	if err != nil {
+		log.Fatal(err)
 	}
-	return
+	for _, fname := range files {
+		pack[fname] = LoadLicelFile(fname)
+	}
+	return pack
 }
 
-func bytes2Float64Arr(b []byte) (r []float64) {
-	i32len := int32(len(b) / 4)
-	r = make([]float64, i32len)
-	for i := int32(0); i < i32len; i++ {
-		r[i] = float64(bytes2Int32(b[i*4:(i+1)*4]) * 1.0)
-	}
-	return
-}
-
-func NewLicelPack(mask string) (pack LicelPack) {
-	pack = make(LicelPack)
-	if matches, err := filepath.Glob(mask); err == nil {
-		for _, fname := range matches {
-
-			pack[fname] = LoadLicelFile(fname)
-		}
-	}
-	return
-}
-
-func SelectCertainWavelength1(lf *LicelFile, isPhoton bool, wavelength float64) (lp LicelProfile) {
+// SelectCertainWavelength1 — выбирает профиль по длине волны из одного файла
+func SelectCertainWavelength1(lf *LicelFile, isPhoton bool, wavelength float64) LicelProfile {
 	for _, v := range lf.Profiles {
 		if v.Photon == isPhoton && v.Wavelength == wavelength {
 			return v
 		}
 	}
-	return
+	return LicelProfile{}
 }
 
-func SelectCertainWavelength2(lp *LicelPack, isPhoton bool, wavelength float64) (lpl LicelProfilesList) {
-	for _, v := range *lp {
-		tmpProfile := SelectCertainWavelength1(&v, isPhoton, wavelength)
-		lpl = append(lpl, tmpProfile)
+// SelectCertainWavelength2 — выбирает все профили по длине волны из набора файлов
+func SelectCertainWavelength2(lp *LicelPack, isPhoton bool, wavelength float64) LicelProfilesList {
+	var result LicelProfilesList
+	for _, file := range *lp {
+		profile := SelectCertainWavelength1(&file, isPhoton, wavelength)
+		if profile.NDataPoints > 0 {
+			result = append(result, profile)
+		}
 	}
-	return
+	return result
 }
