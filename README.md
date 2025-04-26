@@ -1,18 +1,18 @@
 # LicelFormat
-Пакет для работы с файлами Licel, используемый для чтения данных, связанных с измерениями лазеров и профилями
+A package for working with Licel files, used for reading data related to laser measurements and profiles.
 
-## Установка
-Чтобы установить пакет, выполните команду:
+## Installation
+To install the package, run the command:
 
 ```bash
 go get github.com/physicist2018/licelfile
 ```
 
-## Описание функций
+## Function Description
 
 `NewLicelProfile(line string) LicelProfile`
 
-Парсит строку профиля и возвращает структуру LicelProfile, содержащую данные о канале и измерениях. Пример использования:
+Parses a profile string and returns a `LicelProfile` structure containing channel and measurement data.
 
 ```go
 profile := NewLicelProfile("1 0 1 100 0 1000 0.5 400.0.POL 0 0 0 10 1000 0.2 DeviceID 100")
@@ -20,72 +20,74 @@ profile := NewLicelProfile("1 0 1 100 0 1000 0.5 400.0.POL 0 0 0 10 1000 0.2 Dev
 
 `LoadLicelFile(fname string) LicelFile`
 
-Загружает файл Licel по заданному пути fname и возвращает структуру LicelFile, которая содержит информацию о файле, профилях и данных. Пример использования:
+Loads a Licel file from the specified path fname and returns a LicelFile structure containing information about the file, profiles, and data. Example usage:
 
 ```go
 licelFile := LoadLicelFile("path/to/file.txt")
 ```
 
 `NewLicelPack(mask string) LicelPack`
-Загружает несколько файлов Licel, соответствующих маске, и возвращает карту файлов в типе LicelPack. Пример использования:
+Loads multiple Licel files matching the specified mask and returns a map of files in the LicelPack type. Example usage:
 
 ```go
 pack := NewLicelPack("path/to/files/*.txt")
 ```
 
 `SelectCertainWavelength1(lf *LicelFile, isPhoton bool, wavelength float64) LicelProfile`
-Выбирает профиль по длине волны из одного файла. Пример использования:
+
+Selects a profile by wavelength from a single file. Example usage:
 
 ```go
 profile := SelectCertainWavelength1(&licelFile, true, 400.0)
 ```
 
 `SelectCertainWavelength2(lp *LicelPack, isPhoton bool, wavelength float64) LicelProfilesList`
-Выбирает все профили по заданной длине волны из набора файлов. Пример использования:
+Selects all profiles by wavelength from a set of files. Example usage:
 
 ```go
 profiles := SelectCertainWavelength2(&pack, true, 400.0)
 ```
 
-Утилитные функции(не экспортируемые)
+Utility Functions(non exportable)
 
-`str2Bool(str string) bool`: Преобразует строку в булево значение.
+`str2Bool(str string) bool`: Converts a string to a boolean value.
 
-`str2Int(str string) int64`: Преобразует строку в целое число.
+`str2Int(str string) int64`: Converts a string to an integer.
 
-`str2Float(str string) float64`: Преобразует строку в число с плавающей запятой.
+`str2Float(str string) float64`: Converts a string to a floating-point number.
 
-`bytesToFloat64Array(b []byte) []float64`: Преобразует массив байт в массив чисел типа float64.
+`bytesToFloat64Array(b []byte) []float64`: Converts a byte array to a float64 array.
 
-`readAndTrimLine(r *bufio.Reader) string`: Читает строку из буфера и удаляет символы пробела справа.
+`readAndTrimLine(r *bufio.Reader) string`: Reads a line from the buffer and trims whitespace characters on the right.
 
-`skipCRLF(r *bufio.Reader)`: Пропускает символы CR и LF.
+`skipCRLF(r *bufio.Reader)`: Skips CR and LF characters.
 
-`parseTime(s string) time.Time`: Преобразует строку в формат времени.
+`parseTime(s string) time.Time`: Converts a string to a time format.
 
-## Логирование
-Пакет использует zerolog для логирования ошибок и важных событий. Примеры логирования:
+## Logging
+The package uses zerolog for logging errors and important events. Logging examples:
 
-Логирование ошибки при чтении файла:
+Logging an error when reading a file:
 
 ```go
 log.Fatal().Err(err).Str("file", fname).Msg("Ошибка при открытии файла")
 ```
 
-Логирование успешной загрузки данных:
+Logging successful data loading:
 
 ```go
 log.Info().Str("file", fname).Msg("Файл успешно загружен")
 ```
 
-Формат файлов
-Файлы Licel содержат следующие данные:
+File Format
 
-Строки заголовков, содержащие информацию о месте измерений, времени, лазерах и других параметрах.
+Licel files contain the following data:
 
-Данные измерений, представленные в бинарном формате (32-битные числа, little-endian).
+- Header lines, containing information about the measurement site, time, lasers, and other parameters.
+- Measurement data, presented in binary format (32-bit numbers, little-endian).
 
-Пример использования
+
+Example Usage
 
 ```go
 package main
@@ -108,6 +110,5 @@ func main() {
 }
 ```
 
-## Лицензия
-Этот пакет распространяется под лицензией GNU GPL v3. См. файл LICENSE для подробностей.
-
+## License
+This package is distributed under the LGPL V3 license. See the LICENSE file for details.
