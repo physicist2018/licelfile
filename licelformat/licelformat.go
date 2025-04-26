@@ -64,7 +64,7 @@ type LicelFile struct {
 
 type LicelPack map[string]LicelFile
 
-// NewLicelProfile — парсит строку профиля и возвращает LicelProfile
+// NewLicelProfile — parse string line into LicelProfile
 func NewLicelProfile(line string) LicelProfile {
 	items := strings.Fields(line)
 	wvlpol := strings.SplitN(items[7], ".", 2)
@@ -89,11 +89,11 @@ func NewLicelProfile(line string) LicelProfile {
 	}
 }
 
-// LoadLicelFile — загружает LicelFile из указанного файла по пути fname
+// LoadLicelFile — loads LicelFile the specified file name
 func LoadLicelFile(fname string) LicelFile {
 	f, err := os.Open(fname)
 	if err != nil {
-		log.Fatal().Err(err).Str("file", fname).Msg("Ошибка при открытии файла")
+		log.Fatal().Err(err).Str("file", fname).Msg("Error opening file")
 	}
 	defer f.Close()
 
@@ -149,24 +149,24 @@ func LoadLicelFile(fname string) LicelFile {
 	return licf
 }
 
-// readAndTrimLine — читает строку из буфера и удаляет символы пробела справа
+// readAndTrimLine — reads string from reader add thrim to the right
 func readAndTrimLine(r *bufio.Reader) string {
 	line, err := r.ReadString('\n')
 	if err != nil {
-		log.Fatal().Err(err).Msg("Ошибка при чтении строки")
+		log.Fatal().Err(err).Msg("Error reading string")
 	}
 	return strings.TrimRight(line, "\t\r ")
 }
 
-// skipCRLF — пропускает символы CR и LF
+// skipCRLF — skips CR and LF
 func skipCRLF(r *bufio.Reader) {
 	crlf := make([]byte, 2)
 	if _, err := io.ReadFull(r, crlf); err != nil {
-		log.Fatal().Err(err).Msg("Ошибка при пропуске CRLF")
+		log.Fatal().Err(err).Msg("Error skipping CRLF")
 	}
 }
 
-// parseTime — парсит строку с датой и временем в формате "dd/mm/yyyy hh:mm:ss"
+// parseTime — parse datetime string "dd/mm/yyyy hh:mm:ss"
 func parseTime(s string) time.Time {
 	t, err := timefmt.Strptime(s, "%d/%m/%Y %H:%M:%S")
 	if err != nil {
@@ -175,25 +175,25 @@ func parseTime(s string) time.Time {
 	return t
 }
 
-// str2Bool — преобразует строку в булево значение
+// str2Bool — converts string to boolean
 func str2Bool(str string) bool {
 	v, _ := strconv.ParseBool(str)
 	return v
 }
 
-// str2Int — преобразует строку в целое число
+// str2Int — converts string to int
 func str2Int(str string) int64 {
 	v, _ := strconv.ParseInt(str, 10, 64)
 	return v
 }
 
-// str2Float — преобразует строку в число с плавающей запятой
+// str2Float — converts string to float
 func str2Float(str string) float64 {
 	v, _ := strconv.ParseFloat(str, 64)
 	return v
 }
 
-// bytesToFloat64Array — преобразует массив байт в массив float64
+// bytesToFloat64Array — converts []byte to []float64
 func bytesToFloat64Array(b []byte) []float64 {
 	n := len(b) / 4
 	arr := make([]float64, n)
@@ -203,12 +203,12 @@ func bytesToFloat64Array(b []byte) []float64 {
 	return arr
 }
 
-// NewLicelPack — загружает несколько файлов, соответствующих маске
+// NewLicelPack — loads files according to mask
 func NewLicelPack(mask string) LicelPack {
 	pack := make(LicelPack)
 	files, err := filepath.Glob(mask)
 	if err != nil {
-		log.Fatal().Err(err).Str("mask", mask).Msg("Ошибка при получении файлов по маске")
+		log.Fatal().Err(err).Str("mask", mask).Msg("Error getting files by mask")
 	}
 	for _, fname := range files {
 		pack[fname] = LoadLicelFile(fname)
@@ -216,7 +216,7 @@ func NewLicelPack(mask string) LicelPack {
 	return pack
 }
 
-// SelectCertainWavelength1 — выбирает профиль по длине волны из одного файла
+// SelectCertainWavelength1 — selects certain profile by its wavelength and type from a single file
 func SelectCertainWavelength1(lf *LicelFile, isPhoton bool, wavelength float64) LicelProfile {
 	for _, v := range lf.Profiles {
 		if v.Photon == isPhoton && v.Wavelength == wavelength {
@@ -226,7 +226,7 @@ func SelectCertainWavelength1(lf *LicelFile, isPhoton bool, wavelength float64) 
 	return LicelProfile{}
 }
 
-// SelectCertainWavelength2 — выбирает все профили по длине волны из набора файлов
+// SelectCertainWavelength2 — selects certain profile by its wavelength and type from a LicelPack
 func SelectCertainWavelength2(lp *LicelPack, isPhoton bool, wavelength float64) LicelProfilesList {
 	var result LicelProfilesList
 	for _, file := range *lp {

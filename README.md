@@ -1,114 +1,109 @@
 # LicelFormat
-A package for working with Licel files, used for reading data related to laser measurements and profiles.
+
+The `licelformat` package provides utilities for parsing and processing Licel format data files. It supports reading, extracting metadata, and converting binary data into usable formats. This package is intended for working with Licel files, which contain measurement profiles and other associated data.
+
+## Features
+
+- **Parsing**: Parse Licel data files to extract metadata and measurement profiles.
+- **Data conversion**: Convert raw binary data into readable floating-point values.
+- **File handling**: Load multiple Licel files matching a file mask.
+- **Profile selection**: Filter profiles by photon type and wavelength.
 
 ## Installation
-To install the package, run the command:
+
+To install the `licelformat` package, use the following Go command:
 
 ```bash
-go get github.com/physicist2018/licelfile
+go get github.com/yourusername/your-repository-name
 ```
 
-## Function Description
-
-`NewLicelProfile(line string) LicelProfile`
-
-Parses a profile string and returns a `LicelProfile` structure containing channel and measurement data.
-
-```go
-profile := NewLicelProfile("1 0 1 100 0 1000 0.5 400.0.POL 0 0 0 10 1000 0.2 DeviceID 100")
-```
-
-`LoadLicelFile(fname string) LicelFile`
-
-Loads a Licel file from the specified path fname and returns a LicelFile structure containing information about the file, profiles, and data. Example usage:
-
-```go
-licelFile := LoadLicelFile("path/to/file.txt")
-```
-
-`NewLicelPack(mask string) LicelPack`
-Loads multiple Licel files matching the specified mask and returns a map of files in the LicelPack type. Example usage:
-
-```go
-pack := NewLicelPack("path/to/files/*.txt")
-```
-
-`SelectCertainWavelength1(lf *LicelFile, isPhoton bool, wavelength float64) LicelProfile`
-
-Selects a profile by wavelength from a single file. Example usage:
-
-```go
-profile := SelectCertainWavelength1(&licelFile, true, 400.0)
-```
-
-`SelectCertainWavelength2(lp *LicelPack, isPhoton bool, wavelength float64) LicelProfilesList`
-Selects all profiles by wavelength from a set of files. Example usage:
-
-```go
-profiles := SelectCertainWavelength2(&pack, true, 400.0)
-```
-
-Utility Functions(non exportable)
-
-`str2Bool(str string) bool`: Converts a string to a boolean value.
-
-`str2Int(str string) int64`: Converts a string to an integer.
-
-`str2Float(str string) float64`: Converts a string to a floating-point number.
-
-`bytesToFloat64Array(b []byte) []float64`: Converts a byte array to a float64 array.
-
-`readAndTrimLine(r *bufio.Reader) string`: Reads a line from the buffer and trims whitespace characters on the right.
-
-`skipCRLF(r *bufio.Reader)`: Skips CR and LF characters.
-
-`parseTime(s string) time.Time`: Converts a string to a time format.
-
-## Logging
-The package uses zerolog for logging errors and important events. Logging examples:
-
-Logging an error when reading a file:
-
-```go
-log.Fatal().Err(err).Str("file", fname).Msg("Ошибка при открытии файла")
-```
-
-Logging successful data loading:
-
-```go
-log.Info().Str("file", fname).Msg("Файл успешно загружен")
-```
-
-File Format
-
-Licel files contain the following data:
-
-- Header lines, containing information about the measurement site, time, lasers, and other parameters.
-- Measurement data, presented in binary format (32-bit numbers, little-endian).
-
-
-Example Usage
+## Usage
+### Load a Licel File
+To load and parse a Licel file:
 
 ```go
 package main
 
 import (
-	"fmt"
 	"log"
-	"github.com/physicist/licelfile/licelformat"
+	"github.com/physicist2018/licelfile/licelformat"
 )
 
 func main() {
-	// Загрузка файла
-	licelFile := licelfile.LoadLicelFile("path/to/file.txt")
-
-	// Получение профиля по длине волны
-	profile := licelfile.SelectCertainWavelength1(&licelFile, true, 400.0)
-
-	// Вывод данных профиля
-	fmt.Printf("Profile: %+v\n", profile)
+	licelFile := licelformat.LoadLicelFile("path/to/file")
+	log.Printf("Measurement Site: %s", licelFile.MeasurementSite)
+	log.Printf("Measurement Start Time: %s", licelFile.MeasurementStartTime)
 }
 ```
 
+### Selecting Profiles by Wavelength
+To select profiles by wavelength and photon type:
+
+```go
+package main
+
+import (
+	"log"
+	"github.com/physicist2018/licelfile/licelformat"
+)
+
+func main() {
+	licelPack := licelformat.NewLicelPack("path/to/files/*.licel")
+	profiles := licelformat.SelectCertainWavelength2(&licelPack, true, 532.0)
+
+	for _, profile := range profiles {
+		log.Printf("Profile: %+v", profile)
+	}
+}
+```
+
+### Functions
+`NewLicelProfile(line string) LicelProfile`
+Parses a single line of text from a Licel file and returns a LicelProfile struct.
+
+`LoadLicelFile(fname string) LicelFile`
+Loads a Licel file, parses its headers and binary data, and returns a LicelFile struct with the parsed data.
+
+`SelectCertainWavelength1(lf *LicelFile, isPhoton bool, wavelength float64) LicelProfile`
+Selects a profile from a single Licel file by photon type and wavelength.
+
+`SelectCertainWavelength2(lp *LicelPack, isPhoton bool, wavelength float64) LicelProfilesList`
+Selects profiles from multiple Licel files in a LicelPack by photon type and wavelength.
+
+`NewLicelPack(mask string) LicelPack`
+Loads multiple Licel files matching the specified file mask and returns a LicelPack.
+
+### Structs
+`LicelProfile`
+A struct representing a measurement profile. It includes various fields such as:
+
+- Active: Indicates if the channel is active.
+- Photon: Indicates if the measurement is based on photon data.
+- LaserType: The type of laser used for the measurement.
+- NDataPoints: The number of data points in the profile.
+- Wavelength: The wavelength of the laser used in the measurement.
+- Data: A slice of floating-point values representing the data points.
+
+`LicelFile`
+A struct representing a Licel file, including metadata about the measurement and the list of profiles.
+
+- MeasurementSite: The location of the measurement.
+- MeasurementStartTime: The start time of the measurement.
+- Profiles: A list of LicelProfile structs representing the measurement profiles.
+
+`LicelPack`
+A map of LicelFile structs, representing multiple Licel files loaded by a file mask.
+
+## Logging
+This package uses the zerolog package for logging errors and warnings. Ensure that you import and configure zerolog in your main program to capture detailed logging information.
+
 ## License
-This package is distributed under the LGPL V3 license. See the LICENSE file for details.
+The code is released under the LGPL V3 License.
+
+
+
+
+
+
+
+
