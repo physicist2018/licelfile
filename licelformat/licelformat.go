@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"encoding/binary"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog/log"
 
 	"github.com/archsh/timefmt"
 )
@@ -92,7 +93,7 @@ func NewLicelProfile(line string) LicelProfile {
 func LoadLicelFile(fname string) LicelFile {
 	f, err := os.Open(fname)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Str("file", fname).Msg("Ошибка при открытии файла")
 	}
 	defer f.Close()
 
@@ -138,7 +139,7 @@ func LoadLicelFile(fname string) LicelFile {
 	for i := int64(0); i < licf.NDatasets; i++ {
 		prTmp := make([]byte, licf.Profiles[i].NDataPoints*4)
 		if _, err := io.ReadFull(r, prTmp); err != nil {
-			log.Fatal(err)
+			log.Fatal().Err(err).Msg("Ошибка при чтении бинарных данных")
 		}
 		licf.Profiles[i].Data = bytesToFloat64Array(prTmp)
 		skipCRLF(r)
@@ -152,7 +153,7 @@ func LoadLicelFile(fname string) LicelFile {
 func readAndTrimLine(r *bufio.Reader) string {
 	line, err := r.ReadString('\n')
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Ошибка при чтении строки")
 	}
 	return strings.TrimRight(line, "\t\r ")
 }
@@ -161,7 +162,7 @@ func readAndTrimLine(r *bufio.Reader) string {
 func skipCRLF(r *bufio.Reader) {
 	crlf := make([]byte, 2)
 	if _, err := io.ReadFull(r, crlf); err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Ошибка при пропуске CRLF")
 	}
 }
 
@@ -169,7 +170,7 @@ func skipCRLF(r *bufio.Reader) {
 func parseTime(s string) time.Time {
 	t, err := timefmt.Strptime(s, "%d/%m/%Y %H:%M:%S")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Ошибка при парсинге времени")
 	}
 	return t
 }
@@ -207,7 +208,7 @@ func NewLicelPack(mask string) LicelPack {
 	pack := make(LicelPack)
 	files, err := filepath.Glob(mask)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Str("mask", mask).Msg("Ошибка при получении файлов по маске")
 	}
 	for _, fname := range files {
 		pack[fname] = LoadLicelFile(fname)
@@ -230,7 +231,7 @@ func SelectCertainWavelength2(lp *LicelPack, isPhoton bool, wavelength float64) 
 	var result LicelProfilesList
 	for _, file := range *lp {
 		profile := SelectCertainWavelength1(&file, isPhoton, wavelength)
-		if profile.NDataPoints > 0 {
+		if profile.Wavelength != 0 {
 			result = append(result, profile)
 		}
 	}
