@@ -8,7 +8,6 @@ import (
 )
 
 type LicelPack struct {
-	ID        string               `bson:"_id,omitempty"`
 	StartTime time.Time            `bson:"start_time"`
 	Data      map[string]LicelFile `bson:"data"`
 }
