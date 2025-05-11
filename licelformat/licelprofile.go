@@ -57,8 +57,7 @@ func NewLicelProfile(line string) LicelProfile {
 	}
 }
 
-// 1 0 1 16380 1 0000 7.50 00355.o 0 0 00 000 12 002001 0.500 BT0
-
+// Metadata — возвращает метаданные канала
 func (lp *LicelProfile) Metadata() string {
 	var s string
 	if lp.Photon {
@@ -73,6 +72,7 @@ func (lp *LicelProfile) Metadata() string {
 	return fmt.Sprintf("%-78s\r\n", s)
 }
 
+// Profile — преобразование данных канала в строку
 func (lp *LicelProfile) Profile() string {
 	r, err := float64toInt32Bytes(lp.Data)
 	if err != nil {
@@ -82,17 +82,7 @@ func (lp *LicelProfile) Profile() string {
 	}
 }
 
-func int32toBytes(data []int32) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	for _, num := range data {
-		err := binary.Write(buf, binary.LittleEndian, num)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return buf.Bytes(), nil
-}
-
+// float64toInt32Bytes — преобразование массива вещественных чисел в массив байтов
 func float64toInt32Bytes(data []float64) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	for _, num := range data {
@@ -104,6 +94,7 @@ func float64toInt32Bytes(data []float64) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// str2Bool — преобразование строки в логический тип
 func btoi(b bool) int {
 	if b {
 		return 1

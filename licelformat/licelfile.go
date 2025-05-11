@@ -164,6 +164,7 @@ func (lf *LicelFile) SelectCertainWavelength(isPhoton bool, wavelength float64) 
 	return LicelProfile{}
 }
 
+// Save - saves licel file to disk
 func (lf *LicelFile) Save(fname string) error {
 	file, err := os.Create(fname + "1")
 	if err != nil {
@@ -183,10 +184,12 @@ func (lf *LicelFile) Save(fname string) error {
 	return nil
 }
 
+// FormatFirstLine - returns string with first line of LICEL file
 func (lf *LicelFile) FormatFirstLine(fname string) string {
 	return fmt.Sprintf(" %-77s\r\n", fname)
 }
 
+// FormatSecondLine - returns string with second line of LICEL file
 func (lf *LicelFile) FormatSecondLine() string {
 	s := fmt.Sprintf(" %s %s %s %s %s %04.0f %06.1f %06.1f %02.0f", lf.MeasurementSite, lf.MeasurementStartTime.Format("02/01/2006"),
 		lf.MeasurementStartTime.Format("15:04:05"), lf.MeasurementStopTime.Format("02/01/2006"),
@@ -194,6 +197,7 @@ func (lf *LicelFile) FormatSecondLine() string {
 	return fmt.Sprintf("%-78s\r\n", s)
 }
 
+// FormatThirdLine - returns string with third line of LICEL file
 func (lf *LicelFile) FormatThirdLine() string {
 	s := fmt.Sprintf(" %07d %04d %07d %04d %02d %07d %04d", lf.Laser1NShots, lf.Laser1Freq, lf.Laser2NShots, lf.Laser2Freq,
 		lf.NDatasets, lf.Laser3NShots, lf.Laser3Freq)

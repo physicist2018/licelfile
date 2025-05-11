@@ -36,6 +36,7 @@ func (lp *LicelPack) SelectCertainWavelength(isPhoton bool, wavelength float64) 
 	return result
 }
 
+// Save - saves LicelPack to files
 func (lp *LicelPack) Save() error {
 	for fname, licf := range *lp {
 		if err := licf.Save(fname); err != nil {
