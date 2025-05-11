@@ -60,7 +60,7 @@ func TestSelectCertainWavelength1(t *testing.T) {
 	}
 
 	// Выбираем профиль по длине волны
-	selectedProfile := SelectCertainWavelength1(&licelFile, true, 400.0)
+	selectedProfile := licelFile.SelectCertainWavelength(true, 400.0)
 
 	// Проверка результата
 	assert.Equal(t, profile, selectedProfile)
@@ -84,7 +84,7 @@ func TestSelectCertainWavelength2(t *testing.T) {
 	}
 
 	// Выбираем все профили по длине волны 400.0
-	profiles := SelectCertainWavelength2(&licelPack, true, 400.0)
+	profiles := licelPack.SelectCertainWavelength(true, 400.0)
 
 	// Проверка результата
 	assert.Len(t, profiles, 1)
