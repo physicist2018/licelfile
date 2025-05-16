@@ -6,11 +6,12 @@ import (
 
 func main() {
 
-	a := licelformat.NewLicelPack("b*.*")
+	//a := licelformat.NewLicelPack("b*.*")
+	_ = licelformat.NewLicelPackFromZip("111.zip")
 
 	//w := licelformat.SelectCertainWavelength2(&a, false, 355)
 	//_ = json.NewEncoder(os.Stdout).Encode(a)
-	a.Save()
+	//a.Save()
 	//for _, v := range v[0].Data {
 	//	fmt.Println(v)
 	//}

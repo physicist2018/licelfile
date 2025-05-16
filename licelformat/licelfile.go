@@ -204,3 +204,63 @@ func (lf *LicelFile) FormatThirdLine() string {
 
 	return fmt.Sprintf("%-78s\r\n", s)
 }
+
+// LoadLicelFileFromReader — loads licel file from reader
+func LoadLicelFileFromReader(f io.Reader, size int64) LicelFile {
+	// f, err := os.Open(fname)
+	// if err != nil {
+	// 	log.Fatal().Err(err).Str("file", fname).Msg("Error opening file")
+	// }
+	// defer f.Close()
+
+	r := bufio.NewReader(f)
+	var licf LicelFile
+
+	// Пропустить первую строку (обычно пустую или с ненужной информацией)
+	readAndTrimLine(r)
+
+	// Вторая строка: базовая информация
+	header := readAndTrimLine(r)
+	tmp := strings.Fields(header)
+
+	licf.MeasurementSite = tmp[0]
+	licf.MeasurementStartTime = parseTime(tmp[1] + " " + tmp[2])
+	licf.MeasurementStopTime = parseTime(tmp[3] + " " + tmp[4])
+	licf.AltitudeAboveSeaLevel = str2Float(tmp[5])
+	licf.Longitude = str2Float(tmp[6])
+	licf.Latitude = str2Float(tmp[7])
+	licf.Zenith = str2Float(tmp[8])
+
+	// Третья строка: параметры лазеров
+	header = readAndTrimLine(r)
+	tmp = strings.Fields(header)
+	licf.Laser1NShots = str2Int(tmp[0])
+	licf.Laser1Freq = str2Int(tmp[1])
+	licf.Laser2NShots = str2Int(tmp[2])
+	licf.Laser2Freq = str2Int(tmp[3])
+	licf.NDatasets = str2Int(tmp[4])
+	licf.Laser3NShots = str2Int(tmp[5])
+	licf.Laser3Freq = str2Int(tmp[6])
+
+	// Профили
+	licf.Profiles = make(LicelProfilesList, licf.NDatasets)
+	for i := int64(0); i < licf.NDatasets; i++ {
+		header = readAndTrimLine(r)
+		licf.Profiles[i] = NewLicelProfile(header)
+	}
+
+	// После заголовков — бинарные данные
+	skipCRLF(r)
+
+	for i := int64(0); i < licf.NDatasets; i++ {
+		prTmp := make([]byte, licf.Profiles[i].NDataPoints*4)
+		if _, err := io.ReadFull(r, prTmp); err != nil {
+			log.Fatal().Err(err).Msg("Ошибка при чтении бинарных данных")
+		}
+		licf.Profiles[i].Data = bytesToFloat64Array(prTmp)
+		skipCRLF(r)
+	}
+
+	licf.FileLoaded = true
+	return licf
+}
