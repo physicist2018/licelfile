@@ -1,5 +1,8 @@
 # LicelFormat
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/physicist2018/licelfile/tree/v1.1.5.svg)](https://pkg.go.dev/github.com/physicist2018/licelfile/tree/v1.1.5)
+
+
 The `licelformat` package provides utilities for parsing and processing Licel format data files. It supports reading, extracting metadata, and converting binary data into usable formats. This package is intended for working with Licel files, which contain measurement profiles and other associated data.
 
 ## Features
@@ -14,7 +17,7 @@ The `licelformat` package provides utilities for parsing and processing Licel fo
 To install the `licelformat` package, use the following Go command:
 
 ```bash
-go get github.com/yourusername/your-repository-name
+go get github.com/physicist2018/licelfile
 ```
 
 ## Usage
@@ -31,8 +34,6 @@ import (
 
 func main() {
 	licelFile := licelformat.LoadLicelFile("path/to/file")
-	log.Printf("Measurement Site: %s", licelFile.MeasurementSite)
-	log.Printf("Measurement Start Time: %s", licelFile.MeasurementStartTime)
 }
 ```
 
@@ -63,6 +64,12 @@ Parses a single line of text from a Licel file and returns a LicelProfile struct
 
 `LoadLicelFile(fname string) LicelFile`
 Loads a Licel file, parses its headers and binary data, and returns a LicelFile struct with the parsed data.
+
+`LoadLicelFileFromReader(f io.Reader, size int64) LicelFile`
+Loads Licel file from reader, parses its headers and binary data, and returns a LicelFile struct with the parsed data.
+
+`NewLicelPackFromZip(zipPath string) *LicelPack`
+Loads licel measurements from zip archive
 
 `SelectCertainWavelength1(lf *LicelFile, isPhoton bool, wavelength float64) LicelProfile`
 Selects a profile from a single Licel file by photon type and wavelength.
