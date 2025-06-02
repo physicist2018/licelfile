@@ -109,8 +109,5 @@ The code is released under the LGPL V3 License.
 
 
 
-
-
-
-
-
+## TODO
+- переделать читатель, оптимизировать для более строгого чтения файлов

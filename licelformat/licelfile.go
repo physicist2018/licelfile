@@ -29,13 +29,13 @@ type LicelFile struct {
 	Longitude             float64           `json:"longitude"`      // Долгота
 	Latitude              float64           `json:"latitude"`       // Широта
 	Zenith                float64           `json:"zenith"`         // Зенит
-	Laser1NShots          int64             `json:"laser1_nshots"`  // Количество импульсов лазера 1
-	Laser1Freq            int64             `json:"laser1_freq"`    // Частота лазера 1
-	Laser2NShots          int64             `json:"laser2_nshots"`  // Количество импульсов лазера 2
-	Laser2Freq            int64             `json:"laser2_freq"`    // Частота лазера 2
-	NDatasets             int64             `json:"dataset_count"`  // Количество наборов данных
-	Laser3NShots          int64             `json:"laser3_nshots"`  // Количество импульсов лазера 3
-	Laser3Freq            int64             `json:"laser3_freq"`    // Частота лазера 3
+	Laser1NShots          int               `json:"laser1_nshots"`  // Количество импульсов лазера 1
+	Laser1Freq            int               `json:"laser1_freq"`    // Частота лазера 1
+	Laser2NShots          int               `json:"laser2_nshots"`  // Количество импульсов лазера 2
+	Laser2Freq            int               `json:"laser2_freq"`    // Частота лазера 2
+	NDatasets             int               `json:"dataset_count"`  // Количество наборов данных
+	Laser3NShots          int               `json:"laser3_nshots"`  // Количество импульсов лазера 3
+	Laser3Freq            int               `json:"laser3_freq"`    // Частота лазера 3
 	FileLoaded            bool              `json:"-"`              // Файл загружен
 	Profiles              LicelProfilesList `json:"datasets"`       // Список профилей
 }
@@ -79,7 +79,7 @@ func LoadLicelFile(fname string) LicelFile {
 
 	// Профили
 	licf.Profiles = make(LicelProfilesList, licf.NDatasets)
-	for i := int64(0); i < licf.NDatasets; i++ {
+	for i := 0; i < licf.NDatasets; i++ {
 		header = readAndTrimLine(r)
 		licf.Profiles[i] = NewLicelProfile(header)
 	}
@@ -87,7 +87,7 @@ func LoadLicelFile(fname string) LicelFile {
 	// После заголовков — бинарные данные
 	skipCRLF(r)
 
-	for i := int64(0); i < licf.NDatasets; i++ {
+	for i := 0; i < licf.NDatasets; i++ {
 		prTmp := make([]byte, licf.Profiles[i].NDataPoints*4)
 		if _, err := io.ReadFull(r, prTmp); err != nil {
 			log.Fatal().Err(err).Msg("Ошибка при чтении бинарных данных")
@@ -102,6 +102,7 @@ func LoadLicelFile(fname string) LicelFile {
 
 // readAndTrimLine — reads string from reader add thrim to the right
 func readAndTrimLine(r *bufio.Reader) string {
+
 	line, err := r.ReadString('\n')
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error reading string")
@@ -133,9 +134,9 @@ func str2Bool(str string) bool {
 }
 
 // str2Int — converts string to int
-func str2Int(str string) int64 {
-	v, _ := strconv.ParseInt(str, 10, 64)
-	return v
+func str2Int(str string) int {
+	v, _ := strconv.ParseInt(str, 10, 0)
+	return int(v)
 }
 
 // str2Float — converts string to float
@@ -207,16 +208,11 @@ func (lf *LicelFile) FormatThirdLine() string {
 
 // LoadLicelFileFromReader — loads licel file from reader
 func LoadLicelFileFromReader(f io.Reader, size int64) LicelFile {
-	// f, err := os.Open(fname)
-	// if err != nil {
-	// 	log.Fatal().Err(err).Str("file", fname).Msg("Error opening file")
-	// }
-	// defer f.Close()
 
 	r := bufio.NewReader(f)
 	var licf LicelFile
 
-	// Пропустить первую строку (обычно пустую или с ненужной информацией)
+	// Пропустить первую строку (содержит имя читаемого файла)
 	readAndTrimLine(r)
 
 	// Вторая строка: базовая информация
@@ -244,7 +240,7 @@ func LoadLicelFileFromReader(f io.Reader, size int64) LicelFile {
 
 	// Профили
 	licf.Profiles = make(LicelProfilesList, licf.NDatasets)
-	for i := int64(0); i < licf.NDatasets; i++ {
+	for i := 0; i < licf.NDatasets; i++ {
 		header = readAndTrimLine(r)
 		licf.Profiles[i] = NewLicelProfile(header)
 	}
@@ -252,7 +248,7 @@ func LoadLicelFileFromReader(f io.Reader, size int64) LicelFile {
 	// После заголовков — бинарные данные
 	skipCRLF(r)
 
-	for i := int64(0); i < licf.NDatasets; i++ {
+	for i := 0; i < licf.NDatasets; i++ {
 		prTmp := make([]byte, licf.Profiles[i].NDataPoints*4)
 		if _, err := io.ReadFull(r, prTmp); err != nil {
 			log.Fatal().Err(err).Msg("Ошибка при чтении бинарных данных")

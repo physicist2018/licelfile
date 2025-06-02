@@ -13,23 +13,23 @@ const (
 
 // LicelProfile — структура, представляющая измерительный канал
 type LicelProfile struct {
-	Active       bool                      `json:"is_active"`
-	Photon       bool                      `json:"is_photon"`     // Активность канала и тип измерения (фотоны или нет)
-	LaserType    int64                     `json:"laser_type"`    // Тип лазера
-	NDataPoints  int64                     `json:"data_points"`   // Количество данных
-	Reserved     [LICEL_MAX_RESERVED]int64 `json:"reserved"`      // Резервные значения
-	HighVoltage  int64                     `json:"high_voltage"`  // Напряжение
-	BinWidth     float64                   `json:"bin_width"`     // Ширина бина
-	Wavelength   float64                   `json:"wavelength"`    // Длина волны
-	Polarization string                    `json:"polarization"`  // Поляризация
-	BinShift     int64                     `json:"bin_shift"`     // Сдвиг бина
-	DecBinShift  int64                     `json:"dec_bin_shift"` // Децибельный сдвиг
-	AdcBits      int64                     `json:"adc_bits"`      // Биты АЦП
-	NShots       int64                     `json:"n_shots"`       // Количество импульсов
-	DiscrLevel   float64                   `json:"discr_level"`   // Уровень дискриминации
-	DeviceID     string                    `json:"device_id"`     // Идентификатор устройства
-	NCrate       int64                     `json:"n_crate"`       // Номер устройства в крэйте
-	Data         []float64                 `json:"data"`          // Данные
+	Active       bool                    `json:"is_active"`
+	Photon       bool                    `json:"is_photon"`     // Активность канала и тип измерения (фотоны или нет)
+	LaserType    int                     `json:"laser_type"`    // Тип лазера
+	NDataPoints  int                     `json:"data_points"`   // Количество данных
+	Reserved     [LICEL_MAX_RESERVED]int `json:"reserved"`      // Резервные значения
+	HighVoltage  int                     `json:"high_voltage"`  // Напряжение
+	BinWidth     float64                 `json:"bin_width"`     // Ширина бина
+	Wavelength   float64                 `json:"wavelength"`    // Длина волны
+	Polarization string                  `json:"polarization"`  // Поляризация
+	BinShift     int                     `json:"bin_shift"`     // Сдвиг бина
+	DecBinShift  int                     `json:"dec_bin_shift"` // Децибельный сдвиг
+	AdcBits      int                     `json:"adc_bits"`      // Биты АЦП
+	NShots       int                     `json:"n_shots"`       // Количество импульсов
+	DiscrLevel   float64                 `json:"discr_level"`   // Уровень дискриминации
+	DeviceID     string                  `json:"device_id"`     // Идентификатор устройства
+	NCrate       int                     `json:"n_crate"`       // Номер устройства в крэйте
+	Data         []float64               `json:"data"`          // Данные
 }
 
 // NewLicelProfile — parse string line into LicelProfile
@@ -42,7 +42,7 @@ func NewLicelProfile(line string) LicelProfile {
 		Photon:       str2Bool(items[1]),
 		LaserType:    str2Int(items[2]),
 		NDataPoints:  str2Int(items[3]),
-		Reserved:     [3]int64{str2Int(items[4]), str2Int(items[8]), str2Int(items[9])},
+		Reserved:     [3]int{str2Int(items[4]), str2Int(items[8]), str2Int(items[9])},
 		HighVoltage:  str2Int(items[5]),
 		BinWidth:     str2Float(items[6]),
 		Wavelength:   str2Float(wvlpol[0]),
