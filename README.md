@@ -1,6 +1,6 @@
 # LicelFormat
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/physicist2018/licelfile/tree/v1.1.5.svg)](https://pkg.go.dev/github.com/physicist2018/licelfile/tree/v1.1.5)
+[![Go Reference](https://pkg.go.dev/badge/github.com/physicist2018/licelfile/tree/v1.1.5.svg)](https://pkg.go.dev/github.com/physicist2018/licelfile)
 
 
 The `licelformat` package provides utilities for parsing and processing Licel format data files. It supports reading, extracting metadata, and converting binary data into usable formats. This package is intended for working with Licel files, which contain measurement profiles and other associated data.
