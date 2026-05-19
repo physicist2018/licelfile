@@ -93,6 +93,18 @@ func LoadLicelFile(fname string) LicelFile {
 			log.Fatal().Err(err).Msg("Ошибка при чтении бинарных данных")
 		}
 		licf.Profiles[i].Data = bytesToFloat64Array(prTmp)
+
+		scale := 0.0
+		// Dataset is analog channel
+		if !licf.Profiles[i].Photon {
+			adcScale := 1 << licf.Profiles[i].AdcBits
+			scale = licf.Profiles[i].DiscrLevel * 1000.0 / float64(adcScale*licf.Profiles[i].NShots)
+		} else {
+			scale = 1.0 / (float64(licf.Profiles[i].NShots) * 0.05)
+		}
+		for j := range licf.Profiles[i].Data {
+			licf.Profiles[i].Data[j] *= scale
+		}
 		skipCRLF(r)
 	}
 
@@ -254,6 +266,18 @@ func LoadLicelFileFromReader(f io.Reader, size int64) LicelFile {
 			log.Fatal().Err(err).Msg("Ошибка при чтении бинарных данных")
 		}
 		licf.Profiles[i].Data = bytesToFloat64Array(prTmp)
+
+		scale := 0.0
+		// Dataset is analog channel
+		if !licf.Profiles[i].Photon {
+			adcScale := 1 << licf.Profiles[i].AdcBits
+			scale = licf.Profiles[i].DiscrLevel * 1000.0 / float64(adcScale*licf.Profiles[i].NShots)
+		} else {
+			scale = 1.0 / (float64(licf.Profiles[i].NShots) * 0.05)
+		}
+		for j := range licf.Profiles[i].Data {
+			licf.Profiles[i].Data[j] *= scale
+		}
 		skipCRLF(r)
 	}
 
