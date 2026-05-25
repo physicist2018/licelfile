@@ -1,6 +1,7 @@
 package licelformat
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -81,5 +82,46 @@ func TestLicelPack_SaveToZip_Roundtrip(t *testing.T) {
 		for j := range lf.Profiles[i].Data {
 			assert.InDelta(t, lf.Profiles[i].Data[j], lf2.Profiles[i].Data[j], 0.1, "profile %d data[%d]", i, j)
 		}
+	}
+}
+
+// --- SaveToZip with compression levels ---
+
+func TestLicelPack_SaveToZip_CompressionLevels(t *testing.T) {
+	testFile := filepath.Join("..", "testdata", "b2021019.223500")
+	lf, err := LoadLicelFile(testFile)
+	require.NoError(t, err)
+
+	levels := []int{0, 1, 5, 9}
+
+	for _, level := range levels {
+		t.Run(fmt.Sprintf("level_%d", level), func(t *testing.T) {
+			pack := &LicelPack{
+				StartTime:           lf.MeasurementStartTime,
+				ZipCompressionLevel: level,
+				Data: map[string]LicelFile{
+					"b2021019.223500": lf,
+				},
+			}
+
+			tmpDir := t.TempDir()
+			zipPath := filepath.Join(tmpDir, "test.zip")
+
+			err := pack.SaveToZip(zipPath)
+			require.NoError(t, err, "level %d", level)
+
+			pack2, err := NewLicelPackFromZip(zipPath)
+			require.NoError(t, err, "level %d", level)
+
+			lf2 := pack2.Data["/b2021019.223500"]
+			assert.Equal(t, lf.NDatasets, lf2.NDatasets)
+			require.Len(t, lf2.Profiles, len(lf.Profiles))
+			for i := range lf.Profiles {
+				require.Len(t, lf2.Profiles[i].Data, len(lf.Profiles[i].Data))
+				for j := range lf.Profiles[i].Data {
+					assert.InDelta(t, lf.Profiles[i].Data[j], lf2.Profiles[i].Data[j], 0.1, "level %d profile %d data[%d]", level, i, j)
+				}
+			}
+		})
 	}
 }

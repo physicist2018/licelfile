@@ -2,6 +2,20 @@
 
 ## Changelog
 
+## [v2.1.0] — 2026-05-25
+
+### Added
+
+- **`LicelPack.ZipCompressionLevel`** — поле для управления степенью сжатия zip-архива (0 = deflate по умолчанию, 1–9 = степень deflate).
+- **`writeCompressedEntry`** — вспомогательная функция для создания zip-записей с заданным уровнем сжатия через `CreateRaw`.
+- Тест **`TestLicelPack_SaveToZip_CompressionLevels`** — проверяет round-trip для уровней 0, 1, 5, 9.
+
+### Changed
+
+- **`SaveToZip`**: использует `writeCompressedEntry` при `ZipCompressionLevel > 0`, иначе стандартный `zw.Create`.
+
+---
+
 ## [v2.0.2] — 2026-05-25
 
 ### Changed
