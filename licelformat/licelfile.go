@@ -11,14 +11,11 @@ import (
 	"time"
 
 	"github.com/archsh/timefmt"
-	"github.com/rs/zerolog/log"
 )
 
 const (
 	LICEL_MAX_HEADER_LEN = 80
 )
-
-type LicelProfilesList []LicelProfile
 
 // LicelFile — структура, представляющая единичное измерение
 type LicelFile struct {
@@ -40,124 +37,188 @@ type LicelFile struct {
 	Profiles              LicelProfilesList `json:"datasets"`       // Список профилей
 }
 
-// LoadLicelFile — loads LicelFile the specified file name
-func LoadLicelFile(fname string) LicelFile {
+// LoadLicelFile — загружает LICEL-файл по имени
+func LoadLicelFile(fname string) (LicelFile, error) {
 	f, err := os.Open(fname)
 	if err != nil {
-		log.Fatal().Err(err).Str("file", fname).Msg("Error opening file")
+		return LicelFile{}, fmt.Errorf("opening file %q: %w", fname, err)
 	}
 	defer f.Close()
 
-	r := bufio.NewReader(f)
+	return loadFromReader(bufio.NewReader(f))
+}
+
+// LoadLicelFileFromReader — загружает LICEL-файл из произвольного io.Reader
+func LoadLicelFileFromReader(r io.Reader) (LicelFile, error) {
+	return loadFromReader(bufio.NewReader(r))
+}
+
+// loadFromReader — общая логика загрузки LICEL-файла
+func loadFromReader(r *bufio.Reader) (LicelFile, error) {
 	var licf LicelFile
 
-	// Пропустить первую строку (обычно пустую или с ненужной информацией)
-	readAndTrimLine(r)
+	// Пропустить первую строку (обычно пустую или с именем файла)
+	if _, err := readAndTrimLine(r); err != nil {
+		return licf, fmt.Errorf("reading line 1: %w", err)
+	}
 
 	// Вторая строка: базовая информация
-	header := readAndTrimLine(r)
+	header, err := readAndTrimLine(r)
+	if err != nil {
+		return licf, fmt.Errorf("reading line 2: %w", err)
+	}
 	tmp := strings.Fields(header)
+	if len(tmp) < 9 {
+		return licf, fmt.Errorf("line 2: expected at least 9 fields, got %d", len(tmp))
+	}
 
 	licf.MeasurementSite = tmp[0]
-	licf.MeasurementStartTime = parseTime(tmp[1] + " " + tmp[2])
-	licf.MeasurementStopTime = parseTime(tmp[3] + " " + tmp[4])
-	licf.AltitudeAboveSeaLevel = str2Float(tmp[5])
-	licf.Longitude = str2Float(tmp[6])
-	licf.Latitude = str2Float(tmp[7])
-	licf.Zenith = str2Float(tmp[8])
+
+	licf.MeasurementStartTime, err = parseTime(tmp[1] + " " + tmp[2])
+	if err != nil {
+		return licf, fmt.Errorf("parsing start time: %w", err)
+	}
+	licf.MeasurementStopTime, err = parseTime(tmp[3] + " " + tmp[4])
+	if err != nil {
+		return licf, fmt.Errorf("parsing stop time: %w", err)
+	}
+
+	var fErr error
+	licf.AltitudeAboveSeaLevel, fErr = str2Float(tmp[5])
+	if fErr != nil {
+		return licf, fmt.Errorf("parsing altitude: %w", fErr)
+	}
+	licf.Longitude, fErr = str2Float(tmp[6])
+	if fErr != nil {
+		return licf, fmt.Errorf("parsing longitude: %w", fErr)
+	}
+	licf.Latitude, fErr = str2Float(tmp[7])
+	if fErr != nil {
+		return licf, fmt.Errorf("parsing latitude: %w", fErr)
+	}
+	licf.Zenith, fErr = str2Float(tmp[8])
+	if fErr != nil {
+		return licf, fmt.Errorf("parsing zenith: %w", fErr)
+	}
 
 	// Третья строка: параметры лазеров
-	header = readAndTrimLine(r)
+	header, err = readAndTrimLine(r)
+	if err != nil {
+		return licf, fmt.Errorf("reading line 3: %w", err)
+	}
 	tmp = strings.Fields(header)
-	licf.Laser1NShots = str2Int(tmp[0])
-	licf.Laser1Freq = str2Int(tmp[1])
-	licf.Laser2NShots = str2Int(tmp[2])
-	licf.Laser2Freq = str2Int(tmp[3])
-	licf.NDatasets = str2Int(tmp[4])
-	licf.Laser3NShots = str2Int(tmp[5])
-	licf.Laser3Freq = str2Int(tmp[6])
+	if len(tmp) < 7 {
+		return licf, fmt.Errorf("line 3: expected at least 7 fields, got %d", len(tmp))
+	}
+
+	var iErr error
+	licf.Laser1NShots, iErr = str2Int(tmp[0])
+	if iErr != nil {
+		return licf, fmt.Errorf("parsing laser1 nshots: %w", iErr)
+	}
+	licf.Laser1Freq, iErr = str2Int(tmp[1])
+	if iErr != nil {
+		return licf, fmt.Errorf("parsing laser1 freq: %w", iErr)
+	}
+	licf.Laser2NShots, iErr = str2Int(tmp[2])
+	if iErr != nil {
+		return licf, fmt.Errorf("parsing laser2 nshots: %w", iErr)
+	}
+	licf.Laser2Freq, iErr = str2Int(tmp[3])
+	if iErr != nil {
+		return licf, fmt.Errorf("parsing laser2 freq: %w", iErr)
+	}
+	licf.NDatasets, iErr = str2Int(tmp[4])
+	if iErr != nil {
+		return licf, fmt.Errorf("parsing dataset count: %w", iErr)
+	}
+	licf.Laser3NShots, iErr = str2Int(tmp[5])
+	if iErr != nil {
+		return licf, fmt.Errorf("parsing laser3 nshots: %w", iErr)
+	}
+	licf.Laser3Freq, iErr = str2Int(tmp[6])
+	if iErr != nil {
+		return licf, fmt.Errorf("parsing laser3 freq: %w", iErr)
+	}
 
 	// Профили
 	licf.Profiles = make(LicelProfilesList, licf.NDatasets)
 	for i := 0; i < licf.NDatasets; i++ {
-		header = readAndTrimLine(r)
-		licf.Profiles[i] = NewLicelProfile(header)
+		header, err = readAndTrimLine(r)
+		if err != nil {
+			return licf, fmt.Errorf("reading profile header %d: %w", i, err)
+		}
+		licf.Profiles[i], err = NewLicelProfile(header)
+		if err != nil {
+			return licf, fmt.Errorf("parsing profile %d: %w", i, err)
+		}
 	}
 
 	// После заголовков — бинарные данные
-	skipCRLF(r)
+	if err := skipCRLF(r); err != nil {
+		return licf, fmt.Errorf("skipping header/body separator: %w", err)
+	}
 
 	for i := 0; i < licf.NDatasets; i++ {
 		prTmp := make([]byte, licf.Profiles[i].NDataPoints*4)
 		if _, err := io.ReadFull(r, prTmp); err != nil {
-			log.Fatal().Err(err).Msg("Ошибка при чтении бинарных данных")
+			return licf, fmt.Errorf("reading binary data for profile %d: %w", i, err)
 		}
 		licf.Profiles[i].Data = bytesToFloat64Array(prTmp)
 
-		scale := 0.0
-		// Dataset is analog channel
-		if !licf.Profiles[i].Photon {
-			adcScale := 1 << licf.Profiles[i].AdcBits
-			scale = licf.Profiles[i].DiscrLevel * 1000.0 / float64(adcScale*licf.Profiles[i].NShots)
-		} else {
-			scale = 1.0 / (float64(licf.Profiles[i].NShots) * 0.05)
-		}
+		scale := licf.Profiles[i].scaleFactor()
 		for j := range licf.Profiles[i].Data {
 			licf.Profiles[i].Data[j] *= scale
 		}
-		skipCRLF(r)
+		if err := skipCRLF(r); err != nil {
+			return licf, fmt.Errorf("skipping post-profile %d CRLF: %w", i, err)
+		}
 	}
 
 	licf.FileLoaded = true
-	return licf
+	return licf, nil
 }
 
-// readAndTrimLine — reads string from reader add thrim to the right
-func readAndTrimLine(r *bufio.Reader) string {
-
+// readAndTrimLine — reads a line from reader and trims whitespace from right
+func readAndTrimLine(r *bufio.Reader) (string, error) {
 	line, err := r.ReadString('\n')
 	if err != nil {
-		log.Fatal().Err(err).Msg("Error reading string")
+		return "", err
 	}
-	return strings.TrimRight(line, "\t\r ")
+	return strings.TrimRight(line, "\t\r "), nil
 }
 
-// skipCRLF — skips CR and LF
-func skipCRLF(r *bufio.Reader) {
+// skipCRLF — skips \r\n
+func skipCRLF(r *bufio.Reader) error {
 	crlf := make([]byte, 2)
 	if _, err := io.ReadFull(r, crlf); err != nil {
-		log.Fatal().Err(err).Msg("Error skipping CRLF")
+		return err
 	}
+	return nil
 }
 
 // parseTime — parse datetime string "dd/mm/yyyy hh:mm:ss"
-func parseTime(s string) time.Time {
-	t, err := timefmt.Strptime(s, "%d/%m/%Y %H:%M:%S")
-	if err != nil {
-		log.Fatal().Err(err).Msg("Ошибка при парсинге времени")
-	}
-	return t
+func parseTime(s string) (time.Time, error) {
+	return timefmt.Strptime(s, "%d/%m/%Y %H:%M:%S")
 }
 
-// str2Bool — converts string to boolean
-func str2Bool(str string) bool {
-	v, _ := strconv.ParseBool(str)
-	return v
+// str2Bool — converts string to bool
+func str2Bool(str string) (bool, error) {
+	return strconv.ParseBool(str)
 }
 
 // str2Int — converts string to int
-func str2Int(str string) int {
-	v, _ := strconv.ParseInt(str, 10, 0)
-	return int(v)
+func str2Int(str string) (int, error) {
+	v, err := strconv.ParseInt(str, 10, 0)
+	return int(v), err
 }
 
-// str2Float — converts string to float
-func str2Float(str string) float64 {
-	v, _ := strconv.ParseFloat(str, 64)
-	return v
+// str2Float — converts string to float64
+func str2Float(str string) (float64, error) {
+	return strconv.ParseFloat(str, 64)
 }
 
-// bytesToFloat64Array — converts []byte to []float64
+// bytesToFloat64Array — converts []byte to []float64 (little-endian int32 → float64)
 func bytesToFloat64Array(b []byte) []float64 {
 	n := len(b) / 4
 	arr := make([]float64, n)
@@ -167,120 +228,93 @@ func bytesToFloat64Array(b []byte) []float64 {
 	return arr
 }
 
-// SelectCertainWavelength1 — selects certain profile by its wavelength and type from a single file
-func (lf *LicelFile) SelectCertainWavelength(isPhoton bool, wavelength float64) LicelProfile {
+// SelectProfile — returns a profile matching photon flag and wavelength.
+// Returns (LicelProfile{}, false) if no match found.
+func (lf *LicelFile) SelectProfile(isPhoton bool, wavelength float64) (LicelProfile, bool) {
 	for _, v := range lf.Profiles {
 		if v.Photon == isPhoton && v.Wavelength == wavelength {
-			return v
+			return v, true
 		}
 	}
-	return LicelProfile{}
+	return LicelProfile{}, false
 }
 
-// Save - saves licel file to disk
+// WriteTo — сериализует LICEL-файл в io.Writer
+func (lf *LicelFile) WriteTo(w io.Writer, fname string) error {
+	bw := bufio.NewWriter(w)
+
+	if _, err := bw.WriteString(lf.FormatFirstLine(fname)); err != nil {
+		return fmt.Errorf("writing line 1: %w", err)
+	}
+	if _, err := bw.WriteString(lf.FormatSecondLine()); err != nil {
+		return fmt.Errorf("writing line 2: %w", err)
+	}
+	if _, err := bw.WriteString(lf.FormatThirdLine()); err != nil {
+		return fmt.Errorf("writing line 3: %w", err)
+	}
+	for i, p := range lf.Profiles {
+		if _, err := bw.WriteString(p.Metadata()); err != nil {
+			return fmt.Errorf("writing metadata for profile %d: %w", i, err)
+		}
+	}
+	if _, err := bw.WriteString("\r\n"); err != nil {
+		return fmt.Errorf("writing header/body separator: %w", err)
+	}
+	for i, p := range lf.Profiles {
+		data, err := p.ProfileRaw()
+		if err != nil {
+			return fmt.Errorf("serializing profile %d: %w", i, err)
+		}
+		if _, err := bw.Write(data); err != nil {
+			return fmt.Errorf("writing binary data for profile %d: %w", i, err)
+		}
+		if _, err := bw.WriteString("\r\n"); err != nil {
+			return fmt.Errorf("writing post-profile %d CRLF: %w", i, err)
+		}
+	}
+
+	return bw.Flush()
+}
+
+// Save — сохраняет LICEL-файл на диск
 func (lf *LicelFile) Save(fname string) error {
-	file, err := os.Create(fname + "1")
+	file, err := os.Create(fname)
 	if err != nil {
-		return err
+		return fmt.Errorf("creating file %q: %w", fname, err)
 	}
 	defer file.Close()
-	file.WriteString(lf.FormatFirstLine(fname))
-	file.WriteString(lf.FormatSecondLine())
-	file.WriteString(lf.FormatThirdLine())
-	for _, i := range lf.Profiles {
-		file.WriteString(i.Metadata())
-	}
-	file.WriteString("\r\n")
-	for _, i := range lf.Profiles {
-		file.WriteString(i.Profile())
-	}
-	return nil
+
+	return lf.WriteTo(file, fname)
 }
 
-// FormatFirstLine - returns string with first line of LICEL file
+// FormatFirstLine — форматирует первую строку LICEL-файла
 func (lf *LicelFile) FormatFirstLine(fname string) string {
 	return fmt.Sprintf(" %-77s\r\n", fname)
 }
 
-// FormatSecondLine - returns string with second line of LICEL file
+// FormatSecondLine — форматирует вторую строку LICEL-файла (метаданные измерения)
 func (lf *LicelFile) FormatSecondLine() string {
-	s := fmt.Sprintf(" %s %s %s %s %s %04.0f %06.1f %06.1f %02.0f", lf.MeasurementSite, lf.MeasurementStartTime.Format("02/01/2006"),
-		lf.MeasurementStartTime.Format("15:04:05"), lf.MeasurementStopTime.Format("02/01/2006"),
-		lf.MeasurementStopTime.Format("15:04:05"), lf.AltitudeAboveSeaLevel, lf.Longitude, lf.Latitude, lf.Zenith)
+	s := fmt.Sprintf(" %s %s %s %s %s %04.0f %06.1f %06.1f %02.0f",
+		lf.MeasurementSite,
+		lf.MeasurementStartTime.Format("02/01/2006"),
+		lf.MeasurementStartTime.Format("15:04:05"),
+		lf.MeasurementStopTime.Format("02/01/2006"),
+		lf.MeasurementStopTime.Format("15:04:05"),
+		lf.AltitudeAboveSeaLevel,
+		lf.Longitude,
+		lf.Latitude,
+		lf.Zenith,
+	)
 	return fmt.Sprintf("%-78s\r\n", s)
 }
 
-// FormatThirdLine - returns string with third line of LICEL file
+// FormatThirdLine — форматирует третью строку LICEL-файла (параметры лазеров)
 func (lf *LicelFile) FormatThirdLine() string {
-	s := fmt.Sprintf(" %07d %04d %07d %04d %02d %07d %04d", lf.Laser1NShots, lf.Laser1Freq, lf.Laser2NShots, lf.Laser2Freq,
-		lf.NDatasets, lf.Laser3NShots, lf.Laser3Freq)
-
+	s := fmt.Sprintf(" %07d %04d %07d %04d %02d %07d %04d",
+		lf.Laser1NShots, lf.Laser1Freq,
+		lf.Laser2NShots, lf.Laser2Freq,
+		lf.NDatasets,
+		lf.Laser3NShots, lf.Laser3Freq,
+	)
 	return fmt.Sprintf("%-78s\r\n", s)
-}
-
-// LoadLicelFileFromReader — loads licel file from reader
-func LoadLicelFileFromReader(f io.Reader, size int64) LicelFile {
-
-	r := bufio.NewReader(f)
-	var licf LicelFile
-
-	// Пропустить первую строку (содержит имя читаемого файла)
-	readAndTrimLine(r)
-
-	// Вторая строка: базовая информация
-	header := readAndTrimLine(r)
-	tmp := strings.Fields(header)
-
-	licf.MeasurementSite = tmp[0]
-	licf.MeasurementStartTime = parseTime(tmp[1] + " " + tmp[2])
-	licf.MeasurementStopTime = parseTime(tmp[3] + " " + tmp[4])
-	licf.AltitudeAboveSeaLevel = str2Float(tmp[5])
-	licf.Longitude = str2Float(tmp[6])
-	licf.Latitude = str2Float(tmp[7])
-	licf.Zenith = str2Float(tmp[8])
-
-	// Третья строка: параметры лазеров
-	header = readAndTrimLine(r)
-	tmp = strings.Fields(header)
-	licf.Laser1NShots = str2Int(tmp[0])
-	licf.Laser1Freq = str2Int(tmp[1])
-	licf.Laser2NShots = str2Int(tmp[2])
-	licf.Laser2Freq = str2Int(tmp[3])
-	licf.NDatasets = str2Int(tmp[4])
-	licf.Laser3NShots = str2Int(tmp[5])
-	licf.Laser3Freq = str2Int(tmp[6])
-
-	// Профили
-	licf.Profiles = make(LicelProfilesList, licf.NDatasets)
-	for i := 0; i < licf.NDatasets; i++ {
-		header = readAndTrimLine(r)
-		licf.Profiles[i] = NewLicelProfile(header)
-	}
-
-	// После заголовков — бинарные данные
-	skipCRLF(r)
-
-	for i := 0; i < licf.NDatasets; i++ {
-		prTmp := make([]byte, licf.Profiles[i].NDataPoints*4)
-		if _, err := io.ReadFull(r, prTmp); err != nil {
-			log.Fatal().Err(err).Msg("Ошибка при чтении бинарных данных")
-		}
-		licf.Profiles[i].Data = bytesToFloat64Array(prTmp)
-
-		scale := 0.0
-		// Dataset is analog channel
-		if !licf.Profiles[i].Photon {
-			adcScale := 1 << licf.Profiles[i].AdcBits
-			scale = licf.Profiles[i].DiscrLevel * 1000.0 / float64(adcScale*licf.Profiles[i].NShots)
-		} else {
-			scale = 1.0 / (float64(licf.Profiles[i].NShots) * 0.05)
-		}
-		for j := range licf.Profiles[i].Data {
-			licf.Profiles[i].Data[j] *= scale
-		}
-		skipCRLF(r)
-	}
-
-	licf.FileLoaded = true
-	return licf
 }

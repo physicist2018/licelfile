@@ -23,3 +23,11 @@ go.work.sum
 
 # env file
 .env
+
+# OS files
+.DS_Store
+
+# Build artefacts
+cmd/licel/licel
+cmd/licel/*.070296
+cmd/licel/*.072645

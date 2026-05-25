@@ -11,6 +11,9 @@ const (
 	LICEL_MAX_RESERVED = 3
 )
 
+// LicelProfilesList — список профилей
+type LicelProfilesList []LicelProfile
+
 // LicelProfile — структура, представляющая измерительный канал
 type LicelProfile struct {
 	Active       bool                    `json:"is_active"`
@@ -33,72 +36,166 @@ type LicelProfile struct {
 }
 
 // NewLicelProfile — parse string line into LicelProfile
-func NewLicelProfile(line string) LicelProfile {
+func NewLicelProfile(line string) (LicelProfile, error) {
 	items := strings.Fields(line)
+	if len(items) < 16 {
+		return LicelProfile{}, fmt.Errorf("profile header: expected at least 16 fields, got %d", len(items))
+	}
+
 	wvlpol := strings.SplitN(items[7], ".", 2)
+	if len(wvlpol) != 2 {
+		return LicelProfile{}, fmt.Errorf("profile header: invalid wavelength.polarization format %q", items[7])
+	}
+
+	wavelength, err := str2Float(wvlpol[0])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing wavelength %q: %w", wvlpol[0], err)
+	}
+
+	active, err := str2Bool(items[0])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing active %q: %w", items[0], err)
+	}
+	photon, err := str2Bool(items[1])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing photon %q: %w", items[1], err)
+	}
+	laserType, err := str2Int(items[2])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing laser type %q: %w", items[2], err)
+	}
+	nDataPoints, err := str2Int(items[3])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing data points %q: %w", items[3], err)
+	}
+	reserved0, err := str2Int(items[4])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing reserved[0] %q: %w", items[4], err)
+	}
+	highVoltage, err := str2Int(items[5])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing high voltage %q: %w", items[5], err)
+	}
+	binWidth, err := str2Float(items[6])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing bin width %q: %w", items[6], err)
+	}
+	reserved1, err := str2Int(items[8])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing reserved[1] %q: %w", items[8], err)
+	}
+	reserved2, err := str2Int(items[9])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing reserved[2] %q: %w", items[9], err)
+	}
+	binShift, err := str2Int(items[10])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing bin shift %q: %w", items[10], err)
+	}
+	decBinShift, err := str2Int(items[11])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing dec bin shift %q: %w", items[11], err)
+	}
+	adcBits, err := str2Int(items[12])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing adc bits %q: %w", items[12], err)
+	}
+	nShots, err := str2Int(items[13])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing n shots %q: %w", items[13], err)
+	}
+	discrLevel, err := str2Float(items[14])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing discr level %q: %w", items[14], err)
+	}
+
+	if len(items[15]) < 3 {
+		return LicelProfile{}, fmt.Errorf("profile header: device field %q too short", items[15])
+	}
+	deviceID := items[15][:2]
+	nCrate, err := str2Int(items[15][2:])
+	if err != nil {
+		return LicelProfile{}, fmt.Errorf("parsing n crate %q: %w", items[15][2:], err)
+	}
 
 	return LicelProfile{
-		Active:       str2Bool(items[0]),
-		Photon:       str2Bool(items[1]),
-		LaserType:    str2Int(items[2]),
-		NDataPoints:  str2Int(items[3]),
-		Reserved:     [3]int{str2Int(items[4]), str2Int(items[8]), str2Int(items[9])},
-		HighVoltage:  str2Int(items[5]),
-		BinWidth:     str2Float(items[6]),
-		Wavelength:   str2Float(wvlpol[0]),
+		Active:       active,
+		Photon:       photon,
+		LaserType:    laserType,
+		NDataPoints:  nDataPoints,
+		Reserved:     [3]int{reserved0, reserved1, reserved2},
+		HighVoltage:  highVoltage,
+		BinWidth:     binWidth,
+		Wavelength:   wavelength,
 		Polarization: wvlpol[1],
-		BinShift:     str2Int(items[10]),
-		DecBinShift:  str2Int(items[11]),
-		AdcBits:      str2Int(items[12]),
-		NShots:       str2Int(items[13]),
-		DiscrLevel:   str2Float(items[14]),
-		DeviceID:     items[15][:2],
-		NCrate:       str2Int(items[15][2:]),
-	}
+		BinShift:     binShift,
+		DecBinShift:  decBinShift,
+		AdcBits:      adcBits,
+		NShots:       nShots,
+		DiscrLevel:   discrLevel,
+		DeviceID:     deviceID,
+		NCrate:       nCrate,
+	}, nil
 }
 
-// Metadata — возвращает метаданные канала
+// Metadata — возвращает строку с метаданными канала для записи в заголовок файла
 func (lp *LicelProfile) Metadata() string {
 	var s string
 	if lp.Photon {
-		s = fmt.Sprintf(" %1d %1d %1d %05d %1d %04d %04.2f %05d.%1s %0d %0d %02d %03d %02d %06d %05.4f %2s%01d", btoi(lp.Active), btoi(lp.Photon), lp.LaserType, lp.NDataPoints,
-			lp.Reserved[0], lp.HighVoltage, lp.BinWidth, int(lp.Wavelength), lp.Polarization, 0, 0, lp.BinShift, lp.DecBinShift,
+		s = fmt.Sprintf(" %1d %1d %1d %05d %1d %04d %04.2f %05d.%1s %0d %0d %02d %03d %02d %06d %05.4f %2s%01d",
+			btoi(lp.Active), btoi(lp.Photon), lp.LaserType, lp.NDataPoints,
+			lp.Reserved[0], lp.HighVoltage, lp.BinWidth, int(lp.Wavelength), lp.Polarization,
+			lp.Reserved[1], lp.Reserved[2], lp.BinShift, lp.DecBinShift,
 			lp.AdcBits, lp.NShots, lp.DiscrLevel, lp.DeviceID, lp.NCrate)
 	} else {
-		s = fmt.Sprintf(" %1d %1d %1d %05d %1d %04d %04.2f %05d.%1s %0d %0d %02d %03d %02d %06d %05.3f %2s%01d", btoi(lp.Active), btoi(lp.Photon), lp.LaserType, lp.NDataPoints,
-			lp.Reserved[0], lp.HighVoltage, lp.BinWidth, int(lp.Wavelength), lp.Polarization, 0, 0, lp.BinShift, lp.DecBinShift,
+		s = fmt.Sprintf(" %1d %1d %1d %05d %1d %04d %04.2f %05d.%1s %0d %0d %02d %03d %02d %06d %05.3f %2s%01d",
+			btoi(lp.Active), btoi(lp.Photon), lp.LaserType, lp.NDataPoints,
+			lp.Reserved[0], lp.HighVoltage, lp.BinWidth, int(lp.Wavelength), lp.Polarization,
+			lp.Reserved[1], lp.Reserved[2], lp.BinShift, lp.DecBinShift,
 			lp.AdcBits, lp.NShots, lp.DiscrLevel, lp.DeviceID, lp.NCrate)
 	}
 	return fmt.Sprintf("%-78s\r\n", s)
 }
 
-// Profile — преобразование данных канала в строку
-func (lp *LicelProfile) Profile() string {
-	r, err := float64toInt32Bytes(lp.Data)
-	if err != nil {
-		return "\r\n"
-	} else {
-		return string(r) + "\r\n"
+// scaleFactor вычисляет масштабирующий коэффициент для данных профиля
+func (lp *LicelProfile) scaleFactor() float64 {
+	if lp.Photon {
+		return 1.0 / (float64(lp.NShots) * 0.05)
 	}
+	adcScale := 1 << lp.AdcBits
+	return lp.DiscrLevel * 1000.0 / float64(adcScale*lp.NShots)
 }
 
-// float64toInt32Bytes — преобразование массива вещественных чисел в массив байтов
+// Profile — преобразование данных канала в бинарное представление (little-endian int32)
+func (lp *LicelProfile) Profile() ([]byte, error) {
+	return float64toInt32Bytes(lp.Data)
+}
+
+// ProfileRaw — возвращает unscaled бинарное представление данных канала
+func (lp *LicelProfile) ProfileRaw() ([]byte, error) {
+	scale := lp.scaleFactor()
+	unscaled := make([]float64, len(lp.Data))
+	for i, v := range lp.Data {
+		unscaled[i] = v / scale
+	}
+	return float64toInt32Bytes(unscaled)
+}
+
+// float64toInt32Bytes — преобразование массива float64 в []byte (little-endian int32)
 func float64toInt32Bytes(data []float64) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	for _, num := range data {
-		err := binary.Write(buf, binary.LittleEndian, int32(num))
-		if err != nil {
+		if err := binary.Write(buf, binary.LittleEndian, int32(num)); err != nil {
 			return nil, err
 		}
 	}
 	return buf.Bytes(), nil
 }
 
-// str2Bool — преобразование строки в логический тип
+// btoi — bool to int (1/0)
 func btoi(b bool) int {
 	if b {
 		return 1
-	} else {
-		return 0
 	}
+	return 0
 }
