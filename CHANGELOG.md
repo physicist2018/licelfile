@@ -1,6 +1,8 @@
-# Changelog
+# v2.0.0 — refactor/licelformat
 
-## [Unreleased] — refactor/licelformat
+## Changelog
+
+## [v2.0.0] — 2026-05-25
 
 ### Breaking changes
 
