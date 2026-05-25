@@ -197,7 +197,7 @@ func skipCRLF(r *bufio.Reader) error {
 
 // parseTime — parse datetime string "dd/mm/yyyy hh:mm:ss"
 func parseTime(s string) (time.Time, error) {
-	return time.ParseInLocation("02/01/2006 15:04:05", s, time.UTC)
+	return time.ParseInLocation("02/01/2006 15:04:05", s, time.Local)
 }
 
 // str2Bool — converts string to bool
@@ -294,10 +294,10 @@ func (lf *LicelFile) FormatFirstLine(fname string) string {
 func (lf *LicelFile) FormatSecondLine() string {
 	s := fmt.Sprintf(" %s %s %s %s %s %04.0f %06.1f %06.1f %02.0f",
 		lf.MeasurementSite,
-		lf.MeasurementStartTime.UTC().Format("02/01/2006"),
-		lf.MeasurementStartTime.UTC().Format("15:04:05"),
-		lf.MeasurementStopTime.UTC().Format("02/01/2006"),
-		lf.MeasurementStopTime.UTC().Format("15:04:05"),
+		lf.MeasurementStartTime.Local().Format("02/01/2006"),
+		lf.MeasurementStartTime.Local().Format("15:04:05"),
+		lf.MeasurementStopTime.Local().Format("02/01/2006"),
+		lf.MeasurementStopTime.Local().Format("15:04:05"),
 		lf.AltitudeAboveSeaLevel,
 		lf.Longitude,
 		lf.Latitude,

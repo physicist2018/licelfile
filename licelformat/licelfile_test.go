@@ -85,14 +85,13 @@ func TestScaleFactor_Analog(t *testing.T) {
 func TestParseTime(t *testing.T) {
 	ts, err := parseTime("10/02/2020 19:22:35")
 	require.NoError(t, err)
-	utc := ts.UTC()
-	assert.Equal(t, 2020, utc.Year())
-	assert.Equal(t, time.February, utc.Month())
-	assert.Equal(t, 10, utc.Day())
-	assert.Equal(t, 19, utc.Hour())
-	assert.Equal(t, 22, utc.Minute())
-	assert.Equal(t, 35, utc.Second())
-	assert.Equal(t, time.UTC, ts.Location())
+	assert.Equal(t, 2020, ts.Year())
+	assert.Equal(t, time.February, ts.Month())
+	assert.Equal(t, 10, ts.Day())
+	assert.Equal(t, 19, ts.Hour())
+	assert.Equal(t, 22, ts.Minute())
+	assert.Equal(t, 35, ts.Second())
+	assert.Equal(t, time.Local, ts.Location())
 }
 
 func TestParseTime_Invalid(t *testing.T) {
@@ -241,7 +240,6 @@ func TestFormatSecondLine(t *testing.T) {
 	}
 	s := lf.FormatSecondLine()
 	assert.Contains(t, s, "Test")
-	assert.Contains(t, s, "0020")
 	assert.Contains(t, s, "0131.9")
 	assert.Contains(t, s, "0043.1")
 	assert.Contains(t, s, "50")

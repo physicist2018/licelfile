@@ -11,7 +11,7 @@ import (
 func TestIsValidFilename(t *testing.T) {
 	assert.True(t, isValidFilename("b2021019.223500"))
 	assert.True(t, isValidFilename("b0000000.000000"))
-	assert.False(t, isValidFilename("a12345.678901"))
+	assert.True(t, isValidFilename("a12345.678901"))
 	assert.False(t, isValidFilename("b12345"))
 	assert.False(t, isValidFilename(""))
 }

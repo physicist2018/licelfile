@@ -2,6 +2,21 @@
 
 ## Changelog
 
+## [v2.0.2] — 2026-05-25
+
+### Changed
+
+- **`parseTime`**: `time.UTC` → `time.Local` — времена теперь парсятся и форматируются в локальном часовом поясе.
+- **`FormatSecondLine`**: `.UTC().Format()` → `.Local().Format()` — консистентно с `parseTime`.
+- **`isValidFilename`**: regex `^b.*\..+` → `^[a-z].*\..+` — файлы Licel теперь могут начинаться на любую букву `[a-z]`.
+
+### Fixed
+
+- **Тест `TestParseTime`**: убран вызов `.UTC()`, проверяется локальное время напрямую.
+- **Тест `TestIsValidFilename`**: `a12345.678901` теперь валидный.
+
+---
+
 ## [v2.0.1] — 2026-05-25
 
 ### Removed
