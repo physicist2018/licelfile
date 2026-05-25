@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var licelFilenameRegex = regexp.MustCompile(`^[a-z].*\..+`)
+var licelFilenameRegex = regexp.MustCompile(`^b.*\..+`)
 
 // LicelPack — коллекция LICEL-файлов (измерений одной сессии)
 type LicelPack struct {

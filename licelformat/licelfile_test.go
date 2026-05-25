@@ -85,16 +85,24 @@ func TestScaleFactor_Analog(t *testing.T) {
 func TestParseTime(t *testing.T) {
 	ts, err := parseTime("10/02/2020 19:22:35")
 	require.NoError(t, err)
-	assert.Equal(t, 2020, ts.Year())
-	assert.Equal(t, time.February, ts.Month())
-	assert.Equal(t, 10, ts.Day())
-	assert.Equal(t, 19, ts.Hour())
-	assert.Equal(t, 22, ts.Minute())
-	assert.Equal(t, 35, ts.Second())
+	utc := ts.UTC()
+	assert.Equal(t, 2020, utc.Year())
+	assert.Equal(t, time.February, utc.Month())
+	assert.Equal(t, 10, utc.Day())
+	assert.Equal(t, 19, utc.Hour())
+	assert.Equal(t, 22, utc.Minute())
+	assert.Equal(t, 35, utc.Second())
+	assert.Equal(t, time.UTC, ts.Location())
 }
 
 func TestParseTime_Invalid(t *testing.T) {
 	_, err := parseTime("not a date")
+	assert.Error(t, err)
+}
+
+func TestParseTime_WrongOrder(t *testing.T) {
+	// MM/DD/YYYY instead of DD/MM/YYYY
+	_, err := parseTime("30/02/2020 19:22:35")
 	assert.Error(t, err)
 }
 

@@ -2,6 +2,24 @@
 
 ## Changelog
 
+## [v2.0.1] — 2026-05-25
+
+### Removed
+
+- **`timefmt` dependency** — парсинг дат переведён на стандартный `time.ParseInLocation`.
+- **`zerolog` dependency** — полностью удалена из `go.mod` (не использовалась после v2.0.0).
+
+### Changed
+
+- **`parseTime`**: `timefmt.Strptime` → `time.ParseInLocation("02/01/2006 15:04:05", s, time.UTC)`.
+- **`FormatSecondLine`**: `.Format()` → `.UTC().Format()` для консистентности.
+
+### Added
+
+- Тест `TestParseTime_WrongOrder` — проверка, что MM/DD/YYYY не сработает вместо DD/MM/YYYY.
+
+---
+
 ## [v2.0.0] — 2026-05-25
 
 ### Breaking changes

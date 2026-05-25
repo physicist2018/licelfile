@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/archsh/timefmt"
 )
 
 const (
@@ -199,7 +197,7 @@ func skipCRLF(r *bufio.Reader) error {
 
 // parseTime — parse datetime string "dd/mm/yyyy hh:mm:ss"
 func parseTime(s string) (time.Time, error) {
-	return timefmt.Strptime(s, "%d/%m/%Y %H:%M:%S")
+	return time.ParseInLocation("02/01/2006 15:04:05", s, time.UTC)
 }
 
 // str2Bool — converts string to bool
@@ -296,10 +294,10 @@ func (lf *LicelFile) FormatFirstLine(fname string) string {
 func (lf *LicelFile) FormatSecondLine() string {
 	s := fmt.Sprintf(" %s %s %s %s %s %04.0f %06.1f %06.1f %02.0f",
 		lf.MeasurementSite,
-		lf.MeasurementStartTime.Format("02/01/2006"),
-		lf.MeasurementStartTime.Format("15:04:05"),
-		lf.MeasurementStopTime.Format("02/01/2006"),
-		lf.MeasurementStopTime.Format("15:04:05"),
+		lf.MeasurementStartTime.UTC().Format("02/01/2006"),
+		lf.MeasurementStartTime.UTC().Format("15:04:05"),
+		lf.MeasurementStopTime.UTC().Format("02/01/2006"),
+		lf.MeasurementStopTime.UTC().Format("15:04:05"),
 		lf.AltitudeAboveSeaLevel,
 		lf.Longitude,
 		lf.Latitude,
