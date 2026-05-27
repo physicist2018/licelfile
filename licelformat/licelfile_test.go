@@ -171,17 +171,24 @@ func TestLicelFile_Save_Roundtrip(t *testing.T) {
 func TestLicelFile_SelectProfile(t *testing.T) {
 	lf := LicelFile{
 		Profiles: LicelProfilesList{
-			{Photon: false, Wavelength: 355},
-			{Photon: true, Wavelength: 532},
-			{Photon: true, Wavelength: 1064},
+			{Photon: false, Wavelength: 355, Polarization: "o"},
+			{Photon: true, Wavelength: 532, Polarization: "p"},
+			{Photon: true, Wavelength: 1064, Polarization: "s"},
 		},
 	}
 
-	pr, ok := lf.SelectProfile(true, 532)
+	pr, ok := lf.SelectProfile(true, 532, "")
 	assert.True(t, ok)
 	assert.Equal(t, 532.0, pr.Wavelength)
 
-	pr, ok = lf.SelectProfile(true, 999)
+	pr, ok = lf.SelectProfile(true, 532, "p")
+	assert.True(t, ok)
+	assert.Equal(t, 532.0, pr.Wavelength)
+
+	pr, ok = lf.SelectProfile(true, 532, "o")
+	assert.False(t, ok)
+
+	pr, ok = lf.SelectProfile(true, 999, "")
 	assert.False(t, ok)
 	assert.Equal(t, LicelProfile{}, pr)
 }

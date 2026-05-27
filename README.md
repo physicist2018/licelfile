@@ -67,11 +67,17 @@ if err := pack.SaveToZip("output.zip"); err != nil {
 ### Select profiles
 
 ```go
-// From a single file
-profile, ok := lf.SelectProfile(true, 532.0)
+// From a single file — match any polarization
+profile, ok := lf.SelectProfile(true, 532.0, "")
 
-// Across all files in a pack
-profiles := pack.SelectProfiles(false, 355.0)
+// From a single file — match specific polarization
+profile, ok := lf.SelectProfile(false, 355.0, "o")
+
+// Across all files in a pack — match any polarization
+profiles := pack.SelectProfiles(false, 355.0, "")
+
+// Across all files in a pack — match specific polarization
+profiles := pack.SelectProfiles(true, 1064.0, "s")
 ```
 
 ## API
@@ -128,7 +134,7 @@ profiles := pack.SelectProfiles(false, 355.0)
 |--------|----------|-----------|
 | `Save` | `*LicelFile` | `(fname string) error` |
 | `WriteTo` | `*LicelFile` | `(w io.Writer, fname string) error` |
-| `SelectProfile` | `*LicelFile` | `(isPhoton bool, wavelength float64) (LicelProfile, bool)` |
+| `SelectProfile` | `*LicelFile` | `(isPhoton bool, wavelength float64, polarization string) (LicelProfile, bool)` |
 | `FormatFirstLine` | `*LicelFile` | `(fname string) string` |
 | `FormatSecondLine` | `*LicelFile` | `() string` |
 | `FormatThirdLine` | `*LicelFile` | `() string` |
@@ -137,7 +143,7 @@ profiles := pack.SelectProfiles(false, 355.0)
 | `ProfileRaw` | `*LicelProfile` | `() ([]byte, error)` |
 | `Save` | `*LicelPack` | `() error` |
 | `SaveToZip` | `*LicelPack` | `(zipPath string) error` |
-| `SelectProfiles` | `*LicelPack` | `(isPhoton bool, wavelength float64) LicelProfilesList` |
+| `SelectProfiles` | `*LicelPack` | `(isPhoton bool, wavelength float64, polarization string) LicelProfilesList` |
 
 ## License
 

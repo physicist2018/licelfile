@@ -92,11 +92,12 @@ func NewLicelPackFromZip(zipPath string) (*LicelPack, error) {
 	return pack, nil
 }
 
-// SelectProfiles — выбирает профили с заданной длиной волны и типом из всех файлов пака
-func (lp *LicelPack) SelectProfiles(isPhoton bool, wavelength float64) LicelProfilesList {
+// SelectProfiles — выбирает профили с заданными длиной волны, типом и поляризацией из всех файлов пака.
+// Передайте "" в polarization чтобы подходила любая.
+func (lp *LicelPack) SelectProfiles(isPhoton bool, wavelength float64, polarization string) LicelProfilesList {
 	var result LicelProfilesList
 	for _, file := range lp.Data {
-		profile, ok := file.SelectProfile(isPhoton, wavelength)
+		profile, ok := file.SelectProfile(isPhoton, wavelength, polarization)
 		if ok {
 			result = append(result, profile)
 		}

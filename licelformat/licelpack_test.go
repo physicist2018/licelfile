@@ -22,27 +22,32 @@ func TestSelectProfiles(t *testing.T) {
 		Data: map[string]LicelFile{
 			"file1": {
 				Profiles: LicelProfilesList{
-					{Wavelength: 355, Photon: false},
-					{Wavelength: 532, Photon: true},
+					{Wavelength: 355, Photon: false, Polarization: "o"},
+					{Wavelength: 532, Photon: true, Polarization: "p"},
 				},
 			},
 			"file2": {
 				Profiles: LicelProfilesList{
-					{Wavelength: 355, Photon: true},
+					{Wavelength: 355, Photon: true, Polarization: "s"},
+					{Wavelength: 355, Photon: false, Polarization: "p"},
 				},
 			},
 		},
 	}
 
-	result := lp.SelectProfiles(false, 355)
-	assert.Len(t, result, 1)
+	result := lp.SelectProfiles(false, 355, "")
+	assert.Len(t, result, 2)
 	assert.Equal(t, 355.0, result[0].Wavelength)
 	assert.False(t, result[0].Photon)
 
-	result = lp.SelectProfiles(true, 355)
+	result = lp.SelectProfiles(true, 355, "")
 	assert.Len(t, result, 1)
 
-	result = lp.SelectProfiles(true, 999)
+	result = lp.SelectProfiles(false, 355, "p")
+	assert.Len(t, result, 1)
+	assert.Equal(t, "p", result[0].Polarization)
+
+	result = lp.SelectProfiles(true, 999, "")
 	assert.Len(t, result, 0)
 }
 

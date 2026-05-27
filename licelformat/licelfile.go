@@ -226,12 +226,15 @@ func bytesToFloat64Array(b []byte) []float64 {
 	return arr
 }
 
-// SelectProfile — returns a profile matching photon flag and wavelength.
+// SelectProfile — returns a profile matching photon flag, wavelength, and polarization.
+// Pass "" for polarization to match any.
 // Returns (LicelProfile{}, false) if no match found.
-func (lf *LicelFile) SelectProfile(isPhoton bool, wavelength float64) (LicelProfile, bool) {
+func (lf *LicelFile) SelectProfile(isPhoton bool, wavelength float64, polarization string) (LicelProfile, bool) {
 	for _, v := range lf.Profiles {
 		if v.Photon == isPhoton && v.Wavelength == wavelength {
-			return v, true
+			if polarization == "" || v.Polarization == polarization {
+				return v, true
+			}
 		}
 	}
 	return LicelProfile{}, false

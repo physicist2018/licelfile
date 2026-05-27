@@ -2,6 +2,19 @@
 
 ## Changelog
 
+## [v2.1.1] — 2026-05-25
+
+### Changed
+
+- **`SelectProfile(isPhoton, wavelength, polarization)`** — добавлен параметр `polarization string`. Передайте `""` чтобы подходила любая поляризация.
+- **`SelectProfiles(isPhoton, wavelength, polarization)`** — аналогично, добавлен параметр `polarization string`.
+
+### Added
+
+- Тесты поляризации: `TestLicelFile_SelectProfile` (match by pol, mismatch, any), `TestSelectProfiles` (2 files, multiple polarizations).
+
+---
+
 ## [v2.1.0] — 2026-05-25
 
 ### Added
