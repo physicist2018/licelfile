@@ -166,11 +166,6 @@ func (lp *LicelProfile) scaleFactor() float64 {
 	return lp.DiscrLevel * 1000.0 / float64(adcScale*lp.NShots)
 }
 
-// Profile — преобразование данных канала в бинарное представление (little-endian int32)
-func (lp *LicelProfile) Profile() ([]byte, error) {
-	return float64toInt32Bytes(lp.Data)
-}
-
 // ProfileRaw — возвращает unscaled бинарное представление данных канала
 func (lp *LicelProfile) ProfileRaw() ([]byte, error) {
 	scale := lp.scaleFactor()

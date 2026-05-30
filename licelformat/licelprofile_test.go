@@ -119,23 +119,6 @@ func TestLicelProfile_Metadata_Photon(t *testing.T) {
 	assert.Contains(t, s, "BC0")
 }
 
-// --- Profile ---
-
-func TestLicelProfile_Profile(t *testing.T) {
-	pr := LicelProfile{Data: []float64{1, 2, 3}}
-	data, err := pr.Profile()
-	require.NoError(t, err)
-	// 3 int32 → 12 bytes
-	assert.Len(t, data, 12)
-}
-
-func TestLicelProfile_Profile_Empty(t *testing.T) {
-	pr := LicelProfile{Data: []float64{}}
-	data, err := pr.Profile()
-	require.NoError(t, err)
-	assert.Empty(t, data)
-}
-
 // --- ProfileRaw ---
 
 func TestLicelProfile_ProfileRaw(t *testing.T) {

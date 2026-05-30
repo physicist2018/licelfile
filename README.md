@@ -139,7 +139,6 @@ profiles := pack.SelectProfiles(true, 1064.0, "s")
 | `FormatSecondLine` | `*LicelFile` | `() string` |
 | `FormatThirdLine` | `*LicelFile` | `() string` |
 | `Metadata` | `*LicelProfile` | `() string` |
-| `Profile` | `*LicelProfile` | `() ([]byte, error)` |
 | `ProfileRaw` | `*LicelProfile` | `() ([]byte, error)` |
 | `Save` | `*LicelPack` | `() error` |
 | `SaveToZip` | `*LicelPack` | `(zipPath string) error` |

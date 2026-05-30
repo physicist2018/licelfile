@@ -2,6 +2,15 @@
 
 ## Changelog
 
+## [v2.1.2] — 2026-05-30
+
+### Removed
+
+- **`LicelProfile.Profile()`** — мёртвый метод, дублировал логику `float64toInt32Bytes` без учёта масштабирования. Используйте `ProfileRaw()` для получения бинарных данных с правильным unscaling.
+- **Тесты `TestLicelProfile_Profile` и `TestLicelProfile_Profile_Empty`** — удалены вместе с методом.
+
+---
+
 ## [v2.1.1] — 2026-05-25
 
 ### Changed
