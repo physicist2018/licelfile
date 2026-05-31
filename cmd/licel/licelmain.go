@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/physicist2018/licelfile/licelformat"
+	"github.com/physicist2018/licelfile/v2/licelformat"
 )
 
 func main() {

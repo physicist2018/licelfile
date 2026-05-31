@@ -37,7 +37,7 @@ func NewLicelPack(mask string) (*LicelPack, error) {
 		return nil, fmt.Errorf("glob %q: %w", mask, err)
 	}
 
-	for i, fname := range files {
+	for _, fname := range files {
 		lf, err := LoadLicelFile(fname)
 		if err != nil {
 			return nil, fmt.Errorf("loading %q: %w", fname, err)
