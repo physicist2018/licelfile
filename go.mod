@@ -1,4 +1,4 @@
-module github.com/physicist2018/licelfile
+module github.com/physicist2018/licelfile/v2
 
 go 1.13
 

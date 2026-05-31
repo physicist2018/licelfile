@@ -1,6 +1,6 @@
 # LicelFormat
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/physicist2018/licelfile/tree/v2.1.0.svg)](https://pkg.go.dev/github.com/physicist2018/licelfile)
+[![Go Reference](https://pkg.go.dev/badge/github.com/physicist2018/licelfile/v2.svg)](https://pkg.go.dev/github.com/physicist2018/licelfile/v2)
 
 The `licelformat` package provides utilities for parsing and processing Licel format data files. It supports reading, extracting metadata, converting binary data, and round-tripping files through save/load.
 
@@ -15,7 +15,7 @@ The `licelformat` package provides utilities for parsing and processing Licel fo
 ## Installation
 
 ```bash
-go get github.com/physicist2018/licelfile
+go get github.com/physicist2018/licelfile/v2
 ```
 
 ## Usage
@@ -117,6 +117,13 @@ profiles := pack.SelectProfiles(true, 1064.0, "s")
 | `Data`        | `[]float64`| Scaled data points |
 
 **`LicelPack`** — collection of `LicelFile` instances.
+
+| Field        | Type              | Description                  |
+|--------------|-------------------|------------------------------|
+| `StartTime`  | `time.Time`       | Earliest measurement start   |
+| `StopTime`   | `time.Time`       | Latest measurement stop      |
+| `Data`       | `map[string]LicelFile` | Files keyed by filename  |
+| `ZipCompressionLevel` | `int`     | Deflate level for zip (0–9)  |
 
 ### Functions
 

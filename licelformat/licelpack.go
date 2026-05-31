@@ -18,6 +18,7 @@ var licelFilenameRegex = regexp.MustCompile(`^[a-z].*\..+`)
 // LicelPack — коллекция LICEL-файлов (измерений одной сессии)
 type LicelPack struct {
 	StartTime           time.Time            `bson:"start_time"`
+	StopTime            time.Time            `bson:"stop_time"`
 	Data                map[string]LicelFile `bson:"data"`
 	ZipCompressionLevel int                  `bson:"-"` // 0 = default deflate, 1–9 = уровень сжатия
 }
@@ -42,10 +43,20 @@ func NewLicelPack(mask string) (*LicelPack, error) {
 			return nil, fmt.Errorf("loading %q: %w", fname, err)
 		}
 		pack.Data[fname] = lf
-		if i == 0 {
-			pack.StartTime = lf.MeasurementStartTime
+	}
+
+	var minStart, maxStop time.Time
+	for _, lf := range pack.Data {
+		if minStart.IsZero() || lf.MeasurementStartTime.Before(minStart) {
+			minStart = lf.MeasurementStartTime
+		}
+		if lf.MeasurementStopTime.After(maxStop) {
+			maxStop = lf.MeasurementStopTime
 		}
 	}
+
+	pack.StartTime = minStart
+	pack.StopTime = maxStop
 	return pack, nil
 }
 
