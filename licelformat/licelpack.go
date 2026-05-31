@@ -95,10 +95,20 @@ func NewLicelPackFromZip(zipPath string) (*LicelPack, error) {
 		fullPath := filepath.Join("/", f.Name)
 		pack.Data[fullPath] = lFile
 
-		if len(pack.Data) == 1 {
-			pack.StartTime = lFile.MeasurementStartTime
+	}
+
+	var minStart, maxStop time.Time
+	for _, lf := range pack.Data {
+		if minStart.IsZero() || lf.MeasurementStartTime.Before(minStart) {
+			minStart = lf.MeasurementStartTime
+		}
+		if lf.MeasurementStopTime.After(maxStop) {
+			maxStop = lf.MeasurementStopTime
 		}
 	}
+
+	pack.StartTime = minStart
+	pack.StopTime = maxStop
 
 	return pack, nil
 }
