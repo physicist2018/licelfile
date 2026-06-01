@@ -128,6 +128,44 @@ func TestLicelProfile_ProfileRaw(t *testing.T) {
 	assert.Len(t, data, 12)
 }
 
+// --- SetMaxDist ---
+
+func TestLicelProfile_SetMaxDist(t *testing.T) {
+	pr := LicelProfile{
+		BinWidth:    7.5,
+		NDataPoints: 100,
+		Data:        make([]float64, 100),
+	}
+
+	err := pr.SetMaxDist(750) // idx = 750/7.5 = 100, ok (не обрезает)
+	require.NoError(t, err)
+	assert.Equal(t, 100, pr.NDataPoints)
+	assert.Len(t, pr.Data, 100)
+
+	err = pr.SetMaxDist(375) // idx = 50
+	require.NoError(t, err)
+	assert.Equal(t, 50, pr.NDataPoints)
+	assert.Len(t, pr.Data, 50)
+}
+
+func TestLicelProfile_SetMaxDist_ZeroAlt(t *testing.T) {
+	pr := LicelProfile{BinWidth: 7.5, NDataPoints: 100}
+	err := pr.SetMaxDist(0)
+	assert.Error(t, err)
+}
+
+func TestLicelProfile_SetMaxDist_TooLarge(t *testing.T) {
+	pr := LicelProfile{BinWidth: 7.5, NDataPoints: 100, Data: make([]float64, 100)}
+	err := pr.SetMaxDist(7500) // idx = 1000 > 100
+	assert.Error(t, err)
+}
+
+func TestLicelProfile_SetMaxDist_ZeroBinWidth(t *testing.T) {
+	pr := LicelProfile{BinWidth: 0, NDataPoints: 100}
+	err := pr.SetMaxDist(750)
+	assert.Error(t, err)
+}
+
 // --- btoi ---
 
 func TestBtoi(t *testing.T) {

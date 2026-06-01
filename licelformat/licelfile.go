@@ -240,6 +240,16 @@ func (lf *LicelFile) SelectProfile(isPhoton bool, wavelength float64, polarizati
 	return LicelProfile{}, false
 }
 
+// SetMaxDist обрезает все профили до дальности alt (метры).
+func (lf *LicelFile) SetMaxDist(alt float64) error {
+	for i := range lf.Profiles {
+		if err := lf.Profiles[i].SetMaxDist(alt); err != nil {
+			return fmt.Errorf("profile %d: %w", i, err)
+		}
+	}
+	return nil
+}
+
 // WriteTo — сериализует LICEL-файл в io.Writer
 func (lf *LicelFile) WriteTo(w io.Writer, fname string) error {
 	bw := bufio.NewWriter(w)

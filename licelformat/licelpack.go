@@ -126,6 +126,17 @@ func (lp *LicelPack) SelectProfiles(isPhoton bool, wavelength float64, polarizat
 	return result
 }
 
+// SetMaxDist обрезает все профили во всех файлах пака до дальности alt (метры).
+func (lp *LicelPack) SetMaxDist(alt float64) error {
+	for fname, licf := range lp.Data {
+		if err := licf.SetMaxDist(alt); err != nil {
+			return fmt.Errorf("%s: %w", fname, err)
+		}
+		lp.Data[fname] = licf
+	}
+	return nil
+}
+
 // Save — сохраняет все файлы LicelPack на диск
 func (lp *LicelPack) Save() error {
 	for fname, licf := range lp.Data {

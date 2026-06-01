@@ -187,6 +187,24 @@ func float64toInt32Bytes(data []float64) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// SetMaxDist обрезает данные профиля до дальности alt (метры).
+// idx = alt / BinWidth. Ошибка если idx ≤ 0 или idx > NDataPoints.
+func (lp *LicelProfile) SetMaxDist(alt float64) error {
+	if lp.BinWidth <= 0 {
+		return fmt.Errorf("SetMaxDist: bin width must be positive, got %.2f", lp.BinWidth)
+	}
+	idx := int(alt / lp.BinWidth)
+	if idx <= 0 {
+		return fmt.Errorf("SetMaxDist: alt %.0f m → idx %d, must be > 0", alt, idx)
+	}
+	if idx > lp.NDataPoints {
+		return fmt.Errorf("SetMaxDist: alt %.0f m → idx %d exceeds NDataPoints %d", alt, idx, lp.NDataPoints)
+	}
+	lp.Data = lp.Data[:idx]
+	lp.NDataPoints = len(lp.Data)
+	return nil
+}
+
 // btoi — bool to int (1/0)
 func btoi(b bool) int {
 	if b {

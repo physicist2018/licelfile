@@ -142,14 +142,17 @@ profiles := pack.SelectProfiles(true, 1064.0, "s")
 | `Save` | `*LicelFile` | `(fname string) error` |
 | `WriteTo` | `*LicelFile` | `(w io.Writer, fname string) error` |
 | `SelectProfile` | `*LicelFile` | `(isPhoton bool, wavelength float64, polarization string) (LicelProfile, bool)` |
+| `SetMaxDist` | `*LicelFile` | `(alt float64) error` |
 | `FormatFirstLine` | `*LicelFile` | `(fname string) string` |
 | `FormatSecondLine` | `*LicelFile` | `() string` |
 | `FormatThirdLine` | `*LicelFile` | `() string` |
 | `Metadata` | `*LicelProfile` | `() string` |
 | `ProfileRaw` | `*LicelProfile` | `() ([]byte, error)` |
+| `SetMaxDist` | `*LicelProfile` | `(alt float64) error` |
 | `Save` | `*LicelPack` | `() error` |
 | `SaveToZip` | `*LicelPack` | `(zipPath string) error` |
 | `SelectProfiles` | `*LicelPack` | `(isPhoton bool, wavelength float64, polarization string) LicelProfilesList` |
+| `SetMaxDist` | `*LicelPack` | `(alt float64) error` |
 
 ## License
 

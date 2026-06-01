@@ -166,6 +166,36 @@ func TestLicelFile_Save_Roundtrip(t *testing.T) {
 	}
 }
 
+// --- SetMaxDist ---
+
+func TestLicelFile_SetMaxDist(t *testing.T) {
+	lf := LicelFile{
+		Profiles: LicelProfilesList{
+			{BinWidth: 7.5, NDataPoints: 100, Data: make([]float64, 100)},
+			{BinWidth: 7.5, NDataPoints: 200, Data: make([]float64, 200)},
+		},
+	}
+
+	err := lf.SetMaxDist(375) // idx = 50 for both
+	require.NoError(t, err)
+	assert.Equal(t, 50, lf.Profiles[0].NDataPoints)
+	assert.Len(t, lf.Profiles[0].Data, 50)
+	assert.Equal(t, 50, lf.Profiles[1].NDataPoints)
+	assert.Len(t, lf.Profiles[1].Data, 50)
+}
+
+func TestLicelFile_SetMaxDist_Error(t *testing.T) {
+	lf := LicelFile{
+		Profiles: LicelProfilesList{
+			{BinWidth: 7.5, NDataPoints: 100, Data: make([]float64, 100)},
+			{BinWidth: 7.5, NDataPoints: 10, Data: make([]float64, 10)}, // will fail
+		},
+	}
+
+	err := lf.SetMaxDist(375) // idx = 50 > 10 for profile 1
+	assert.Error(t, err)
+}
+
 // --- SelectProfile ---
 
 func TestLicelFile_SelectProfile(t *testing.T) {

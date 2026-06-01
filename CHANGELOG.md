@@ -2,6 +2,17 @@
 
 ## Changelog
 
+## [v2.1.4] — 2026-05-30
+
+### Added
+
+- **`LicelProfile.SetMaxDist(alt float64) error`** — обрезает `Data` и обновляет `NDataPoints` по заданной дальности (`idx = alt / BinWidth`). Ошибка если `idx ≤ 0` или `idx > NDataPoints`.
+- **`LicelFile.SetMaxDist(alt float64) error`** — вызывает `SetMaxDist` для каждого профиля в файле.
+- **`LicelPack.SetMaxDist(alt float64) error`** — вызывает `SetMaxDist` для каждого файла в паке.
+- **Тесты**: `TestLicelProfile_SetMaxDist`, `TestLicelProfile_SetMaxDist_ZeroAlt`, `TestLicelProfile_SetMaxDist_TooLarge`, `TestLicelProfile_SetMaxDist_ZeroBinWidth`, `TestLicelFile_SetMaxDist`, `TestLicelFile_SetMaxDist_Error`, `TestLicelPack_SetMaxDist`, `TestLicelPack_SetMaxDist_Error`.
+
+---
+
 ## [v2.1.3] — 2026-05-30
 
 ### Added

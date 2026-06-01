@@ -51,6 +51,39 @@ func TestSelectProfiles(t *testing.T) {
 	assert.Len(t, result, 0)
 }
 
+// --- SetMaxDist ---
+
+func TestLicelPack_SetMaxDist(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"file1": {Profiles: LicelProfilesList{{BinWidth: 7.5, NDataPoints: 100, Data: make([]float64, 100)}}},
+			"file2": {Profiles: LicelProfilesList{{BinWidth: 7.5, NDataPoints: 200, Data: make([]float64, 200)}}},
+		},
+	}
+
+	err := lp.SetMaxDist(375) // idx = 50
+	require.NoError(t, err)
+
+	pf1 := lp.Data["file1"].Profiles[0]
+	assert.Equal(t, 50, pf1.NDataPoints)
+	assert.Len(t, pf1.Data, 50)
+
+	pf2 := lp.Data["file2"].Profiles[0]
+	assert.Equal(t, 50, pf2.NDataPoints)
+	assert.Len(t, pf2.Data, 50)
+}
+
+func TestLicelPack_SetMaxDist_Error(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"file1": {Profiles: LicelProfilesList{{BinWidth: 7.5, NDataPoints: 10, Data: make([]float64, 10)}}},
+		},
+	}
+
+	err := lp.SetMaxDist(375) // idx = 50 > 10
+	assert.Error(t, err)
+}
+
 // --- SaveToZip ---
 
 func TestLicelPack_SaveToZip_Roundtrip(t *testing.T) {
