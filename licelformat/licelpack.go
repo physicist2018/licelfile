@@ -113,6 +113,70 @@ func NewLicelPackFromZip(zipPath string) (*LicelPack, error) {
 	return pack, nil
 }
 
+// Filter возвращает новый LicelPack, содержащий только файлы, удовлетворяющие условию cond.
+// Исходный пак не изменяется. StartTime/StopTime пересчитываются по отфильтрованному подмножеству.
+func (lp *LicelPack) Filter(cond func(lf *LicelFile) bool) LicelPack {
+	result := LicelPack{
+		Data:                make(map[string]LicelFile),
+		ZipCompressionLevel: lp.ZipCompressionLevel,
+	}
+	for fname, lf := range lp.Data {
+		if cond(&lf) {
+			result.Data[fname] = lf
+		}
+	}
+
+	var minStart, maxStop time.Time
+	for _, lf := range result.Data {
+		if minStart.IsZero() || lf.MeasurementStartTime.Before(minStart) {
+			minStart = lf.MeasurementStartTime
+		}
+		if lf.MeasurementStopTime.After(maxStop) {
+			maxStop = lf.MeasurementStopTime
+		}
+	}
+	result.StartTime = minStart
+	result.StopTime = maxStop
+	return result
+}
+
+// FilterProfiles возвращает новый LicelPack, в котором оставлены только профили, удовлетворяющие cond.
+// Файлы без подходящих профилей исключаются, NDatasets обновляется. Исходный пак не изменяется.
+func (lp *LicelPack) FilterProfiles(cond func(pr *LicelProfile) bool) LicelPack {
+	result := LicelPack{
+		Data:                make(map[string]LicelFile),
+		ZipCompressionLevel: lp.ZipCompressionLevel,
+	}
+
+	for fname, lf := range lp.Data {
+		filtered := make(LicelProfilesList, 0, len(lf.Profiles))
+		for i := range lf.Profiles {
+			if cond(&lf.Profiles[i]) {
+				filtered = append(filtered, lf.Profiles[i])
+			}
+		}
+		if len(filtered) == 0 {
+			continue
+		}
+		lf.Profiles = filtered
+		lf.NDatasets = len(filtered)
+		result.Data[fname] = lf
+	}
+
+	var minStart, maxStop time.Time
+	for _, lf := range result.Data {
+		if minStart.IsZero() || lf.MeasurementStartTime.Before(minStart) {
+			minStart = lf.MeasurementStartTime
+		}
+		if lf.MeasurementStopTime.After(maxStop) {
+			maxStop = lf.MeasurementStopTime
+		}
+	}
+	result.StartTime = minStart
+	result.StopTime = maxStop
+	return result
+}
+
 // SelectProfiles — выбирает профили с заданными длиной волны, типом и поляризацией из всех файлов пака.
 // Передайте "" в polarization чтобы подходила любая.
 func (lp *LicelPack) SelectProfiles(isPhoton bool, wavelength float64, polarization string) LicelProfilesList {

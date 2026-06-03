@@ -2,6 +2,16 @@
 
 ## Changelog
 
+## [v2.1.5] — 2026-06-03
+
+### Added
+
+- **`LicelPack.Filter(cond func(lf *LicelFile) bool) LicelPack`** — возвращает новый пак, содержащий только файлы, удовлетворяющие условию `cond`. Исходный пак не изменяется, `StartTime`/`StopTime` пересчитываются.
+- **`LicelPack.FilterProfiles(cond func(pr *LicelProfile) bool) LicelPack`** — возвращает новый пак с отфильтрованными профилями внутри каждого файла. Файлы без подходящих профилей исключаются, `NDatasets` обновляется. Унифицирует `SelectProfile`/`SelectProfiles` под единый интерфейс.
+- **Тесты**: `TestLicelPack_Filter_*` (4 шт.), `TestLicelPack_FilterProfiles_*` (4 шт.).
+
+---
+
 ## [v2.1.4] — 2026-05-30
 
 ### Added

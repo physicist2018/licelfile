@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -84,7 +85,228 @@ func TestLicelPack_SetMaxDist_Error(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// --- Filter ---
+
+func TestLicelPack_Filter_AllMatch(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				MeasurementSite:      "A",
+				MeasurementStartTime: time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC),
+				MeasurementStopTime:  time.Date(2024, 1, 1, 10, 5, 0, 0, time.UTC),
+			},
+			"f2": {
+				MeasurementStartTime: time.Date(2024, 1, 1, 10, 10, 0, 0, time.UTC),
+				MeasurementStopTime:  time.Date(2024, 1, 1, 10, 15, 0, 0, time.UTC),
+			},
+		},
+	}
+
+	result := lp.Filter(func(lf *LicelFile) bool { return true })
+
+	assert.Len(t, result.Data, 2)
+	assert.Contains(t, result.Data, "f1")
+	assert.Contains(t, result.Data, "f2")
+	assert.Equal(t, time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC), result.StartTime)
+	assert.Equal(t, time.Date(2024, 1, 1, 10, 15, 0, 0, time.UTC), result.StopTime)
+
+	// исходный пак не изменён
+	assert.Len(t, lp.Data, 2)
+}
+
+func TestLicelPack_Filter_NoneMatch(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {},
+			"f2": {},
+		},
+	}
+
+	result := lp.Filter(func(lf *LicelFile) bool { return false })
+
+	assert.Len(t, result.Data, 0)
+	assert.True(t, result.StartTime.IsZero())
+	assert.True(t, result.StopTime.IsZero())
+}
+
+func TestLicelPack_Filter_Partial(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				MeasurementSite:      "A",
+				MeasurementStartTime: time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC),
+				MeasurementStopTime:  time.Date(2024, 1, 1, 10, 5, 0, 0, time.UTC),
+			},
+			"f2": {
+				MeasurementSite:      "B",
+				MeasurementStartTime: time.Date(2024, 1, 1, 10, 10, 0, 0, time.UTC),
+				MeasurementStopTime:  time.Date(2024, 1, 1, 10, 15, 0, 0, time.UTC),
+			},
+			"f3": {
+				MeasurementSite:      "A",
+				MeasurementStartTime: time.Date(2024, 1, 1, 9, 0, 0, 0, time.UTC),
+				MeasurementStopTime:  time.Date(2024, 1, 1, 9, 30, 0, 0, time.UTC),
+			},
+		},
+	}
+
+	result := lp.Filter(func(lf *LicelFile) bool { return lf.MeasurementSite == "A" })
+
+	assert.Len(t, result.Data, 2)
+	assert.Contains(t, result.Data, "f1")
+	assert.NotContains(t, result.Data, "f2")
+	assert.Contains(t, result.Data, "f3")
+	// StartTime = min(f1=10:00, f3=9:00) = 9:00
+	assert.Equal(t, time.Date(2024, 1, 1, 9, 0, 0, 0, time.UTC), result.StartTime)
+	// StopTime = max(f1=10:05, f3=9:30) = 10:05
+	assert.Equal(t, time.Date(2024, 1, 1, 10, 5, 0, 0, time.UTC), result.StopTime)
+}
+
+func TestLicelPack_Filter_PreservesCompression(t *testing.T) {
+	lp := &LicelPack{
+		ZipCompressionLevel: 7,
+		Data: map[string]LicelFile{
+			"f1": {},
+		},
+	}
+
+	result := lp.Filter(func(lf *LicelFile) bool { return true })
+
+	assert.Equal(t, 7, result.ZipCompressionLevel)
+}
+
 // --- SaveToZip ---
+
+// --- FilterProfiles ---
+
+func TestLicelPack_FilterProfiles_AllMatch(t *testing.T) {
+	lp := &LicelPack{
+		ZipCompressionLevel: 5,
+		Data: map[string]LicelFile{
+			"f1": {
+				NDatasets: 2,
+				Profiles: LicelProfilesList{
+					{Wavelength: 355, Photon: false, Polarization: "o"},
+					{Wavelength: 532, Photon: true, Polarization: "p"},
+				},
+			},
+		},
+	}
+
+	result := lp.FilterProfiles(func(pr *LicelProfile) bool { return true })
+
+	require.Len(t, result.Data, 1)
+	f1 := result.Data["f1"]
+	assert.Len(t, f1.Profiles, 2)
+	assert.Equal(t, 2, f1.NDatasets)
+	assert.Equal(t, 5, result.ZipCompressionLevel)
+
+	// исходный пак не изменён
+	assert.Len(t, lp.Data, 1)
+	assert.Equal(t, 2, lp.Data["f1"].NDatasets)
+}
+
+func TestLicelPack_FilterProfiles_NoneMatch(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				NDatasets: 1,
+				Profiles:  LicelProfilesList{{Wavelength: 355}},
+			},
+		},
+	}
+
+	result := lp.FilterProfiles(func(pr *LicelProfile) bool { return false })
+
+	assert.Len(t, result.Data, 0)
+	assert.True(t, result.StartTime.IsZero())
+	assert.True(t, result.StopTime.IsZero())
+}
+
+func TestLicelPack_FilterProfiles_Partial(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				MeasurementStartTime: time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC),
+				MeasurementStopTime:  time.Date(2024, 1, 1, 10, 5, 0, 0, time.UTC),
+				NDatasets:            2,
+				Profiles: LicelProfilesList{
+					{Wavelength: 355, Photon: false},
+					{Wavelength: 532, Photon: true},
+				},
+			},
+			"f2": {
+				MeasurementStartTime: time.Date(2024, 1, 1, 10, 10, 0, 0, time.UTC),
+				MeasurementStopTime:  time.Date(2024, 1, 1, 10, 15, 0, 0, time.UTC),
+				NDatasets:            2,
+				Profiles: LicelProfilesList{
+					{Wavelength: 355, Photon: true},
+					{Wavelength: 1064, Photon: false},
+				},
+			},
+			"f3": {
+				NDatasets: 2,
+				Profiles: LicelProfilesList{
+					{Wavelength: 999, Photon: true},
+					{Wavelength: 888, Photon: true},
+				},
+			},
+		},
+	}
+
+	// только аналоговые профили (!Photon)
+	result := lp.FilterProfiles(func(pr *LicelProfile) bool { return !pr.Photon })
+
+	require.Len(t, result.Data, 2) // f1 и f2 остались, f3 исключён
+
+	f1 := result.Data["f1"]
+	assert.Len(t, f1.Profiles, 1)
+	assert.Equal(t, 1, f1.NDatasets)
+	assert.Equal(t, 355.0, f1.Profiles[0].Wavelength)
+
+	f2 := result.Data["f2"]
+	assert.Len(t, f2.Profiles, 1)
+	assert.Equal(t, 1, f2.NDatasets)
+	assert.Equal(t, 1064.0, f2.Profiles[0].Wavelength)
+
+	assert.NotContains(t, result.Data, "f3") // нет аналоговых профилей
+
+	// время пересчитано: min = f1(10:00), max = f2(10:15)
+	assert.Equal(t, time.Date(2024, 1, 1, 10, 0, 0, 0, time.UTC), result.StartTime)
+	assert.Equal(t, time.Date(2024, 1, 1, 10, 15, 0, 0, time.UTC), result.StopTime)
+}
+
+func TestLicelPack_FilterProfiles_SelectsAnalog(t *testing.T) {
+	lp := &LicelPack{
+		ZipCompressionLevel: 3,
+		Data: map[string]LicelFile{
+			"f1": {
+				MeasurementStartTime: time.Date(2024, 6, 1, 8, 0, 0, 0, time.UTC),
+				MeasurementStopTime:  time.Date(2024, 6, 1, 8, 5, 0, 0, time.UTC),
+				NDatasets:            3,
+				Profiles: LicelProfilesList{
+					{Wavelength: 355, Photon: false, Polarization: "o", NDataPoints: 100, Data: make([]float64, 100)},
+					{Wavelength: 355, Photon: false, Polarization: "p", NDataPoints: 200, Data: make([]float64, 200)},
+					{Wavelength: 532, Photon: true, Polarization: "o", NDataPoints: 300, Data: make([]float64, 300)},
+				},
+			},
+		},
+	}
+
+	// выбираем только аналоговые 355нм с поляризацией "o"
+	result := lp.FilterProfiles(func(pr *LicelProfile) bool {
+		return !pr.Photon && pr.Wavelength == 355.0 && pr.Polarization == "o"
+	})
+
+	require.Len(t, result.Data, 1)
+	f1 := result.Data["f1"]
+	assert.Len(t, f1.Profiles, 1)
+	assert.Equal(t, 1, f1.NDatasets)
+	assert.Equal(t, 355.0, f1.Profiles[0].Wavelength)
+	assert.Equal(t, "o", f1.Profiles[0].Polarization)
+	assert.Len(t, f1.Profiles[0].Data, 100)
+	assert.Equal(t, 3, result.ZipCompressionLevel)
+}
 
 func TestLicelPack_SaveToZip_Roundtrip(t *testing.T) {
 	testFile := filepath.Join("..", "testdata", "b2021019.223500")
