@@ -154,6 +154,7 @@ profiles := pack.SelectProfiles(true, 1064.0, "s")
 | `SelectProfiles` | `*LicelPack` | `(isPhoton bool, wavelength float64, polarization string) LicelProfilesList` |
 | `Filter` | `*LicelPack` | `(cond func(lf *LicelFile) bool) LicelPack` |
 | `FilterProfiles` | `*LicelPack` | `(cond func(pr *LicelProfile) bool) LicelPack` |
+| `FilterProfilesList` | `*LicelPack` | `(cond func(pr *LicelProfile) bool) LicelProfilesList` |
 | `SetMaxDist` | `*LicelPack` | `(alt float64) error` |
 
 ## License

@@ -177,6 +177,20 @@ func (lp *LicelPack) FilterProfiles(cond func(pr *LicelProfile) bool) LicelPack 
 	return result
 }
 
+// FilterProfilesList возвращает объединённый список профилей из всех файлов пакета, удовлетворяющих cond.
+// Исходный пак не изменяется.
+func (lp *LicelPack) FilterProfilesList(cond func(pr *LicelProfile) bool) LicelProfilesList {
+	var result LicelProfilesList
+	for _, lf := range lp.Data {
+		for i := range lf.Profiles {
+			if cond(&lf.Profiles[i]) {
+				result = append(result, lf.Profiles[i])
+			}
+		}
+	}
+	return result
+}
+
 // SelectProfiles — выбирает профили с заданными длиной волны, типом и поляризацией из всех файлов пака.
 // Передайте "" в polarization чтобы подходила любая.
 func (lp *LicelPack) SelectProfiles(isPhoton bool, wavelength float64, polarization string) LicelProfilesList {

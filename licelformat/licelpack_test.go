@@ -177,6 +177,117 @@ func TestLicelPack_Filter_PreservesCompression(t *testing.T) {
 
 // --- SaveToZip ---
 
+// --- FilterProfilesList ---
+
+func TestLicelPack_FilterProfilesList_AllMatch(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				Profiles: LicelProfilesList{
+					{Wavelength: 355, Photon: false, Polarization: "o"},
+					{Wavelength: 532, Photon: true, Polarization: "p"},
+				},
+			},
+			"f2": {
+				Profiles: LicelProfilesList{
+					{Wavelength: 355, Photon: true, Polarization: "s"},
+					{Wavelength: 355, Photon: false, Polarization: "p"},
+				},
+			},
+		},
+	}
+
+	result := lp.FilterProfilesList(func(pr *LicelProfile) bool { return true })
+
+	assert.Len(t, result, 4)
+	assert.Equal(t, 355.0, result[0].Wavelength)
+	assert.False(t, result[0].Photon)
+	assert.Equal(t, "o", result[0].Polarization)
+
+	// исходный пак не изменён
+	assert.Len(t, lp.Data, 2)
+}
+
+func TestLicelPack_FilterProfilesList_NoneMatch(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				Profiles: LicelProfilesList{{Wavelength: 355}},
+			},
+			"f2": {
+				Profiles: LicelProfilesList{{Wavelength: 532}},
+			},
+		},
+	}
+
+	result := lp.FilterProfilesList(func(pr *LicelProfile) bool { return false })
+
+	assert.Len(t, result, 0)
+}
+
+func TestLicelPack_FilterProfilesList_Partial(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				Profiles: LicelProfilesList{
+					{Wavelength: 355, Photon: false},
+					{Wavelength: 532, Photon: true},
+				},
+			},
+			"f2": {
+				Profiles: LicelProfilesList{
+					{Wavelength: 355, Photon: true},
+					{Wavelength: 1064, Photon: false},
+				},
+			},
+			"f3": {
+				Profiles: LicelProfilesList{
+					{Wavelength: 999, Photon: true},
+					{Wavelength: 888, Photon: true},
+				},
+			},
+		},
+	}
+
+	// только аналоговые профили (!Photon)
+	result := lp.FilterProfilesList(func(pr *LicelProfile) bool { return !pr.Photon })
+
+	assert.Len(t, result, 2) // 355 (f1) и 1064 (f2)
+	assert.Equal(t, 355.0, result[0].Wavelength)
+	assert.Equal(t, 1064.0, result[1].Wavelength)
+	assert.False(t, result[0].Photon)
+	assert.False(t, result[1].Photon)
+
+	// исходный пак не изменён
+	assert.Contains(t, lp.Data, "f1")
+	assert.Contains(t, lp.Data, "f2")
+	assert.Contains(t, lp.Data, "f3")
+}
+
+func TestLicelPack_FilterProfilesList_SelectsAnalog(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				Profiles: LicelProfilesList{
+					{Wavelength: 355, Photon: false, Polarization: "o", NDataPoints: 100, Data: make([]float64, 100)},
+					{Wavelength: 355, Photon: false, Polarization: "p", NDataPoints: 200, Data: make([]float64, 200)},
+					{Wavelength: 532, Photon: true, Polarization: "o", NDataPoints: 300, Data: make([]float64, 300)},
+				},
+			},
+		},
+	}
+
+	// выбираем только аналоговые 355нм с поляризацией "o"
+	result := lp.FilterProfilesList(func(pr *LicelProfile) bool {
+		return !pr.Photon && pr.Wavelength == 355.0 && pr.Polarization == "o"
+	})
+
+	assert.Len(t, result, 1)
+	assert.Equal(t, 355.0, result[0].Wavelength)
+	assert.Equal(t, "o", result[0].Polarization)
+	assert.Len(t, result[0].Data, 100)
+}
+
 // --- FilterProfiles ---
 
 func TestLicelPack_FilterProfiles_AllMatch(t *testing.T) {

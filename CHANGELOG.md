@@ -8,7 +8,8 @@
 
 - **`LicelPack.Filter(cond func(lf *LicelFile) bool) LicelPack`** — возвращает новый пак, содержащий только файлы, удовлетворяющие условию `cond`. Исходный пак не изменяется, `StartTime`/`StopTime` пересчитываются.
 - **`LicelPack.FilterProfiles(cond func(pr *LicelProfile) bool) LicelPack`** — возвращает новый пак с отфильтрованными профилями внутри каждого файла. Файлы без подходящих профилей исключаются, `NDatasets` обновляется. Унифицирует `SelectProfile`/`SelectProfiles` под единый интерфейс.
-- **Тесты**: `TestLicelPack_Filter_*` (4 шт.), `TestLicelPack_FilterProfiles_*` (4 шт.).
+- **`LicelPack.FilterProfilesList(cond func(pr *LicelProfile) bool) LicelProfilesList`** — возвращает объединённый список профилей из всех файлов пакета, удовлетворяющих условию `cond`. Исходный пак не изменяется.
+- **Тесты**: `TestLicelPack_Filter_*` (4 шт.), `TestLicelPack_FilterProfiles_*` (4 шт.), `TestLicelPack_FilterProfilesList_*` (4 шт.).
 
 ---
 
