@@ -214,6 +214,22 @@ func (lp *LicelPack) SelectProfiles(isPhoton bool, wavelength float64, polarizat
 	return result
 }
 
+// Glue склеивает аналоговый и цифровой каналы для каждого файла в паке.
+// Для каждого файла вызывается LicelFile.Glue, и если ошибок нет,
+// полученный склеенный профиль добавляется в Profiles этого файла.
+func (lp *LicelPack) Glue(wvl float64, polarization string, h1, h2 float64) error {
+	for fname, lf := range lp.Data {
+		glued, err := lf.Glue(wvl, polarization, h1, h2)
+		if err != nil {
+			return fmt.Errorf("%s: %w", fname, err)
+		}
+		lf.Profiles = append(lf.Profiles, glued)
+		lf.NDatasets = len(lf.Profiles)
+		lp.Data[fname] = lf
+	}
+	return nil
+}
+
 // SetMaxDist обрезает все профили во всех файлах пака до дальности alt (метры).
 func (lp *LicelPack) SetMaxDist(alt float64) error {
 	for fname, licf := range lp.Data {

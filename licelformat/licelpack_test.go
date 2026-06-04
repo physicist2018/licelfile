@@ -508,6 +508,94 @@ func TestLicelPack_SaveToZip_Roundtrip(t *testing.T) {
 	}
 }
 
+// --- Glue ---
+
+func TestLicelPack_Glue_Success(t *testing.T) {
+	n := 10
+	analogData := make([]float64, n)
+	photonData := make([]float64, n)
+	for i := 0; i < n; i++ {
+		analogData[i] = float64(1000 + i*10)
+		photonData[i] = float64(200 + i)
+	}
+
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				Profiles: LicelProfilesList{
+					{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: analogData, LaserType: 1, NShots: 2001, DiscrLevel: 0.5},
+					{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: photonData, LaserType: 1, NShots: 2000, DiscrLevel: 0.005},
+				},
+				NDatasets: 2,
+			},
+		},
+	}
+
+	err := lp.Glue(532, "p", 15, 45)
+	require.NoError(t, err)
+
+	f1 := lp.Data["f1"]
+	assert.Equal(t, 3, len(f1.Profiles))
+	assert.Equal(t, 3, f1.NDatasets)
+
+	glued := f1.Profiles[2]
+	assert.Equal(t, "BG", glued.DeviceID)
+	assert.False(t, glued.Photon)
+}
+
+func TestLicelPack_Glue_MultipleFiles(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				Profiles: LicelProfilesList{
+					{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000}},
+					{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}},
+				},
+				NDatasets: 2,
+			},
+			"f2": {
+				Profiles: LicelProfilesList{
+					{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{200, 300, 400, 500}},
+					{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{20, 30, 40, 50}},
+				},
+				NDatasets: 2,
+			},
+		},
+	}
+
+	err := lp.Glue(532, "p", 0, 22) // idx2=2 для f1 (max=2.99), idx2=2 для f2 (max=2.99)
+	require.NoError(t, err)
+
+	assert.Equal(t, 3, len(lp.Data["f1"].Profiles))
+	assert.Equal(t, 3, lp.Data["f1"].NDatasets)
+	assert.Equal(t, 3, len(lp.Data["f2"].Profiles))
+	assert.Equal(t, 3, lp.Data["f2"].NDatasets)
+}
+
+func TestLicelPack_Glue_Error(t *testing.T) {
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				Profiles: LicelProfilesList{
+					{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300}},
+				},
+				NDatasets: 1,
+			},
+		},
+	}
+
+	err := lp.Glue(532, "p", 0, 15)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "f1")
+	assert.Contains(t, err.Error(), "photon channel not found")
+}
+
+func TestLicelPack_Glue_EmptyPack(t *testing.T) {
+	lp := &LicelPack{Data: map[string]LicelFile{}}
+	err := lp.Glue(532, "p", 0, 15)
+	assert.NoError(t, err)
+}
+
 // --- SaveToZip with compression levels ---
 
 func TestLicelPack_SaveToZip_CompressionLevels(t *testing.T) {
