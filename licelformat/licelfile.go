@@ -231,7 +231,10 @@ func bytesToFloat64Array(b []byte) []float64 {
 // Returns (LicelProfile{}, false) if no match found.
 func (lf *LicelFile) SelectProfile(isPhoton bool, wavelength float64, polarization string) (LicelProfile, bool) {
 	for _, v := range lf.Profiles {
-		if v.Photon == isPhoton && v.Wavelength == wavelength {
+		if v.IsGlued() {
+			continue
+		}
+		if v.IsPhoton() == isPhoton && v.Wavelength == wavelength {
 			if polarization == "" || v.Polarization == polarization {
 				return v, true
 			}
