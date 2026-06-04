@@ -2,6 +2,33 @@
 
 ## Changelog
 
+## [v2.4.3] — 2026-06-04
+
+### Changed
+
+- **`LicelFile.Glue`**: удалён параметр `polarization string`. Метод теперь принимает только `(wvl float64, h1, h2 float64)`. Поиск аналогового и фотонного каналов ведётся по любой поляризации.
+- **`LicelPack.Glue`**: удалён параметр `polarization string`. Сигнатура — `(wvl float64, h1, h2 float64) error`.
+- **README**: обновлены сигнатуры и примеры вызова `Glue`.
+
+---
+
+## [v2.4.1] — 2026-06-04
+
+### Changed
+
+- **`LicelPack.Glue`**: теперь ищет существующий склеенный профиль (`DeviceID="BG"`) для той же длины волны и поляризации и заменяет его, а не добавляет новый.
+- **`SelectProfile`**: теперь пропускает BG-профили (`IsGlued()`) и использует `IsPhoton()`/`IsAnalog()` вместо поля `Photon`.
+
+### Fixed
+
+- **Тесты `SelectProfile`/`Glue`**: добавлен `DeviceID` во все тестовые профили ("BT", "BC") после перехода на `IsPhoton()`/`IsAnalog()`/`IsGlued()`.
+
+### Added
+
+- **`TestLicelPack_Glue_ReplacesExisting`** — тест, проверяющий, что повторный вызов `Glue` заменяет, а не дублирует BG-профиль.
+
+---
+
 ## [v2.4.0] — 2026-06-04
 
 ### Added

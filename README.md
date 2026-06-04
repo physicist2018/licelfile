@@ -187,7 +187,7 @@ profiles355 := pack.FilterProfilesList(func(pr *licelformat.LicelProfile) bool {
 | `Save` | `*LicelFile` | `(fname string) error` |
 | `WriteTo` | `*LicelFile` | `(w io.Writer, fname string) error` |
 | `SelectProfile` | `*LicelFile` | `(isPhoton bool, wavelength float64, polarization string) (LicelProfile, bool)` |
-| `Glue` | `*LicelFile` | `(wvl float64, polarization string, h1, h2 float64) (LicelProfile, error)` |
+| `Glue` | `*LicelFile` | `(wvl float64, h1, h2 float64) (LicelProfile, error)` |
 | `SetMaxDist` | `*LicelFile` | `(alt float64) error` |
 | `IsPhoton` | `*LicelProfile` | `() bool` |
 | `IsAnalog` | `*LicelProfile` | `() bool` |
@@ -201,13 +201,13 @@ profiles355 := pack.FilterProfilesList(func(pr *licelformat.LicelProfile) bool {
 | `FilterProfilesList` | `*LicelPack` | `(cond func(pr *LicelProfile) bool) LicelProfilesList` |
 | `ToProfilesList` | `*LicelPack` | `() LicelProfilesList` |
 | `SetMaxDist` | `*LicelPack` | `(alt float64) error` |
-| `Glue` | `*LicelPack` | `(wvl float64, polarization string, h1, h2 float64) error` |
+| `Glue` | `*LicelPack` | `(wvl float64, h1, h2 float64) error` |
 
 ### Glue analog and photon channels
 
 ```go
 // In a single file: glue 355nm analog+photon, compute ratio in [500; 2000]m
-glued, err := lf.Glue(355.0, "o", 500.0, 2000.0)
+glued, err := lf.Glue(355.0, 500.0, 2000.0)
 if err != nil {
     log.Fatal(err)
 }
@@ -215,7 +215,7 @@ if err != nil {
 // glued.IsGlued() == true
 
 // In a whole pack: glue every file
-if err := pack.Glue(355.0, "o", 500.0, 2000.0); err != nil {
+if err := pack.Glue(355.0, 500.0, 2000.0); err != nil {
     log.Fatal(err)
 }
 ```
