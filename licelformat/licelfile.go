@@ -240,6 +240,106 @@ func (lf *LicelFile) SelectProfile(isPhoton bool, wavelength float64, polarizati
 	return LicelProfile{}, false
 }
 
+// Glue склеивает аналоговый и цифровой каналы для заданной длины волны и поляризации.
+//
+// Параметры:
+//   - wvl — длина волны
+//   - polarization — поляризация ("p", "s" и т.д.)
+//   - h1, h2 — диапазон высот в метрах для вычисления коэффициента склейки
+//
+// Алгоритм:
+//  1. Находит аналоговый (Photon=false) и цифровой (Photon=true) профили.
+//  2. В диапазоне [h1; h2] вычисляет среднее отношение analog/photon — коэффициент k.
+//  3. Создаёт новый профиль с DeviceID="BG":
+//     - h < h1: данные аналогового канала
+//     - h1 ≤ h ≤ h2: 0.5*(analog + k*photon)
+//     - h > h2: k*photon
+func (lf *LicelFile) Glue(wvl float64, polarization string, h1, h2 float64) (LicelProfile, error) {
+	analog, ok := lf.SelectProfile(false, wvl, polarization)
+	if !ok {
+		return LicelProfile{}, fmt.Errorf("glue: analog channel not found for wavelength %.0f, polarization %q", wvl, polarization)
+	}
+	photon, ok := lf.SelectProfile(true, wvl, polarization)
+	if !ok {
+		return LicelProfile{}, fmt.Errorf("glue: photon channel not found for wavelength %.0f, polarization %q", wvl, polarization)
+	}
+
+	if analog.BinWidth <= 0 {
+		return LicelProfile{}, fmt.Errorf("glue: analog channel has invalid bin width %.2f", analog.BinWidth)
+	}
+	if photon.BinWidth <= 0 {
+		return LicelProfile{}, fmt.Errorf("glue: photon channel has invalid bin width %.2f", photon.BinWidth)
+	}
+
+	if h1 >= h2 {
+		return LicelProfile{}, fmt.Errorf("glue: h1 (%.2f) must be less than h2 (%.2f)", h1, h2)
+	}
+
+	idx1 := int(h1 / analog.BinWidth)
+	idx2 := int(h2 / analog.BinWidth)
+
+	dataLen := len(analog.Data)
+	if len(photon.Data) < dataLen {
+		dataLen = len(photon.Data)
+	}
+
+	if idx1 < 0 || idx1 >= dataLen {
+		return LicelProfile{}, fmt.Errorf("glue: h1 (%.2f m) maps to index %d, out of range [0, %d)", h1, idx1, dataLen)
+	}
+	if idx2 >= dataLen {
+		return LicelProfile{}, fmt.Errorf("glue: h2 (%.2f m) maps to index %d, exceeds data length %d", h2, idx2, dataLen)
+	}
+
+	// Вычисляем k как среднее отношение analog/photon на [idx1:idx2]
+	n := 0
+	var sumK float64
+	for i := idx1; i <= idx2; i++ {
+		if photon.Data[i] == 0 {
+			continue
+		}
+		sumK += analog.Data[i] / photon.Data[i]
+		n++
+	}
+	if n == 0 {
+		return LicelProfile{}, fmt.Errorf("glue: all photon data values are zero in range [%.2f, %.2f], cannot compute coefficient", h1, h2)
+	}
+	k := sumK / float64(n)
+
+	// Создаём результирующий профиль
+	result := LicelProfile{
+		Active:       true,
+		Photon:       false,
+		LaserType:    analog.LaserType,
+		NDataPoints:  dataLen,
+		Reserved:     analog.Reserved,
+		HighVoltage:  analog.HighVoltage,
+		BinWidth:     analog.BinWidth,
+		Wavelength:   analog.Wavelength,
+		Polarization: analog.Polarization,
+		BinShift:     analog.BinShift,
+		DecBinShift:  analog.DecBinShift,
+		AdcBits:      analog.AdcBits,
+		NShots:       analog.NShots,
+		DiscrLevel:   analog.DiscrLevel,
+		DeviceID:     "BG",
+		NCrate:       analog.NCrate,
+		Data:         make([]float64, dataLen),
+	}
+
+	for i := 0; i < dataLen; i++ {
+		switch {
+		case i < idx1:
+			result.Data[i] = analog.Data[i]
+		case i <= idx2:
+			result.Data[i] = 0.5 * (analog.Data[i] + k*photon.Data[i])
+		default:
+			result.Data[i] = k * photon.Data[i]
+		}
+	}
+
+	return result, nil
+}
+
 // SetMaxDist обрезает все профили до дальности alt (метры).
 func (lf *LicelFile) SetMaxDist(alt float64) error {
 	for i := range lf.Profiles {

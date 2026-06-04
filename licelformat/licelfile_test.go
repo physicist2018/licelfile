@@ -298,6 +298,131 @@ func TestFormatThirdLine(t *testing.T) {
 	assert.Contains(t, s, "12")
 }
 
+// --- Glue ---
+
+func TestLicelFile_Glue_Success(t *testing.T) {
+	n := 100
+	analogData := make([]float64, n)
+	photonData := make([]float64, n)
+	for i := 0; i < n; i++ {
+		analogData[i] = float64(1000 + i*10)
+		photonData[i] = float64(200 + i)
+	}
+
+	lf := LicelFile{
+		Profiles: LicelProfilesList{
+			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: analogData, Active: true, LaserType: 1, NShots: 2001, DiscrLevel: 0.5},
+			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: photonData, Active: true, LaserType: 1, NShots: 2000, DiscrLevel: 0.005},
+		},
+	}
+
+	got, err := lf.Glue(532, "p", 150, 300)
+	require.NoError(t, err)
+
+	assert.Equal(t, "BG", got.DeviceID)
+	assert.False(t, got.Photon)
+	assert.Equal(t, 532.0, got.Wavelength)
+	assert.Equal(t, "p", got.Polarization)
+	assert.Equal(t, n, len(got.Data))
+
+	// h < h1 (i < 20): analog
+	for i := 0; i < 20; i++ {
+		assert.Equal(t, analogData[i], got.Data[i], "at index %d (h < h1)", i)
+	}
+
+	// k вычисляется на [idx1, idx2] = [20, 40]
+	var sumK float64
+	cnt := 0
+	for i := 20; i <= 40; i++ {
+		if photonData[i] != 0 {
+			sumK += analogData[i] / photonData[i]
+			cnt++
+		}
+	}
+	k := sumK / float64(cnt)
+	for i := 20; i <= 40; i++ {
+		expected := 0.5 * (analogData[i] + k*photonData[i])
+		assert.InDelta(t, expected, got.Data[i], 1e-9, "at index %d (glue zone)", i)
+	}
+
+	// h > h2 (i > 40): k*photon
+	for i := 41; i < n; i++ {
+		expected := k * photonData[i]
+		assert.InDelta(t, expected, got.Data[i], 1e-9, "at index %d (h > h2)", i)
+	}
+}
+
+func TestLicelFile_Glue_MissingAnalog(t *testing.T) {
+	lf := LicelFile{
+		Profiles: LicelProfilesList{
+			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
+		},
+	}
+	_, err := lf.Glue(532, "p", 10, 50)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "analog channel not found")
+}
+
+func TestLicelFile_Glue_MissingPhoton(t *testing.T) {
+	lf := LicelFile{
+		Profiles: LicelProfilesList{
+			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
+		},
+	}
+	_, err := lf.Glue(532, "p", 10, 50)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "photon channel not found")
+}
+
+func TestLicelFile_Glue_InvalidRange(t *testing.T) {
+	lf := LicelFile{
+		Profiles: LicelProfilesList{
+			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
+			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
+		},
+	}
+	_, err := lf.Glue(532, "p", 50, 10)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "h1")
+	assert.Contains(t, err.Error(), "must be less than h2")
+}
+
+func TestLicelFile_Glue_H1OutOfRange(t *testing.T) {
+	lf := LicelFile{
+		Profiles: LicelProfilesList{
+			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 10)},
+			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 10)},
+		},
+	}
+	_, err := lf.Glue(532, "p", 200, 300) // h1 maps to idx 26, exceeds dataLen 10
+	assert.Error(t, err)
+}
+
+func TestLicelFile_Glue_AllZeroPhoton(t *testing.T) {
+	lf := LicelFile{
+		Profiles: LicelProfilesList{
+			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300, 400}},
+			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{0, 0, 0, 0}},
+		},
+	}
+	_, err := lf.Glue(532, "p", 0, 22) // idx2=2, dataLen=4 — попадает в диапазон, но photon=0
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "all photon data values are zero")
+}
+
+func TestLicelFile_Glue_DataLengthMismatch(t *testing.T) {
+	// photon shorter than analog — uses min length
+	lf := LicelFile{
+		Profiles: LicelProfilesList{
+			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300, 400, 500, 600}},
+			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{10, 20, 30}},
+		},
+	}
+	got, err := lf.Glue(532, "p", 0, 15) // idx2=2, fits in 3
+	require.NoError(t, err)
+	assert.Equal(t, 3, len(got.Data))
+}
+
 // --- LoadLicelFileFromReader ---
 
 func TestLoadLicelFileFromReader_Empty(t *testing.T) {
