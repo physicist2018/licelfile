@@ -80,6 +80,52 @@ profiles := pack.SelectProfiles(false, 355.0, "")
 profiles := pack.SelectProfiles(true, 1064.0, "s")
 ```
 
+### Filter files in a pack
+
+```go
+// Keep only files from a specific site
+filtered := pack.Filter(func(lf *licelformat.LicelFile) bool {
+    return lf.MeasurementSite == "Observatory"
+})
+
+// Keep only files within a time range
+filtered := pack.Filter(func(lf *licelformat.LicelFile) bool {
+    return lf.MeasurementStartTime.After(startOfDay) &&
+           lf.MeasurementStartTime.Before(endOfDay)
+})
+```
+
+### Filter profiles within a pack
+
+```go
+// Keep only analog profiles, drop files with none
+analogPack := pack.FilterProfiles(func(pr *licelformat.LicelProfile) bool {
+    return !pr.Photon
+})
+
+// Keep only 355nm profiles
+pack355 := pack.FilterProfiles(func(pr *licelformat.LicelProfile) bool {
+    return pr.Wavelength == 355.0
+})
+```
+
+### Collect matching profiles into a flat list
+
+```go
+// Get all analog profiles as a flat list
+analogProfiles := pack.FilterProfilesList(func(pr *licelformat.LicelProfile) bool {
+    return !pr.Photon
+})
+for _, pr := range analogProfiles {
+    fmt.Println(pr.Wavelength, pr.Polarization)
+}
+
+// Get a flat list of all 355nm profiles
+profiles355 := pack.FilterProfilesList(func(pr *licelformat.LicelProfile) bool {
+    return pr.Wavelength == 355.0
+})
+```
+
 ## API
 
 ### Types
