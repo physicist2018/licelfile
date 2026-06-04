@@ -11,7 +11,7 @@ import (
 
 func TestNewLicelProfile_ValidAnalog(t *testing.T) {
 	line := " 1 0 1 16380 1 0000 7.50 00355.o 0 0 00 000 12 002001 0.500 BT0"
-	pr, err := NewLicelProfile(line)
+	pr, err := newLicelProfile(line)
 	require.NoError(t, err)
 
 	assert.True(t, pr.Active)
@@ -34,7 +34,7 @@ func TestNewLicelProfile_ValidAnalog(t *testing.T) {
 
 func TestNewLicelProfile_ValidPhoton(t *testing.T) {
 	line := " 1 1 1 16380 1 0000 7.50 00355.o 0 0 00 000 00 002001 3.1746 BC0"
-	pr, err := NewLicelProfile(line)
+	pr, err := newLicelProfile(line)
 	require.NoError(t, err)
 
 	assert.True(t, pr.Active)
@@ -49,19 +49,19 @@ func TestNewLicelProfile_ValidPhoton(t *testing.T) {
 }
 
 func TestNewLicelProfile_TooFewFields(t *testing.T) {
-	_, err := NewLicelProfile(" 1 0 1")
+	_, err := newLicelProfile(" 1 0 1")
 	assert.Error(t, err)
 }
 
 func TestNewLicelProfile_InvalidWavelength(t *testing.T) {
 	line := " 1 0 1 16380 1 0000 7.50 abc.o 0 0 00 000 12 002001 0.500 BT0"
-	_, err := NewLicelProfile(line)
+	_, err := newLicelProfile(line)
 	assert.Error(t, err)
 }
 
 func TestNewLicelProfile_InvalidNumbers(t *testing.T) {
 	line := " X 0 1 16380 1 0000 7.50 00355.o 0 0 00 000 12 002001 0.500 BT0"
-	_, err := NewLicelProfile(line)
+	_, err := newLicelProfile(line)
 	assert.Error(t, err)
 }
 
@@ -87,7 +87,7 @@ func TestLicelProfile_Metadata_Analog(t *testing.T) {
 		NCrate:       0,
 	}
 
-	s := pr.Metadata()
+	s := pr.metadata()
 	assert.Contains(t, s, "0.500")
 	assert.Contains(t, s, "BT0")
 	assert.Contains(t, s, "355.o")
@@ -114,7 +114,7 @@ func TestLicelProfile_Metadata_Photon(t *testing.T) {
 		NCrate:       0,
 	}
 
-	s := pr.Metadata()
+	s := pr.metadata()
 	assert.Contains(t, s, "3.1746")
 	assert.Contains(t, s, "BC0")
 }
@@ -123,7 +123,7 @@ func TestLicelProfile_Metadata_Photon(t *testing.T) {
 
 func TestLicelProfile_ProfileRaw(t *testing.T) {
 	pr := LicelProfile{Photon: false, AdcBits: 12, NShots: 2001, DiscrLevel: 0.5, Data: []float64{17.27, 17.28, 17.29}}
-	data, err := pr.ProfileRaw()
+	data, err := pr.profileRaw()
 	require.NoError(t, err)
 	assert.Len(t, data, 12)
 }

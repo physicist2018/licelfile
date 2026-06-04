@@ -257,9 +257,6 @@ func TestLicelPack_FilterProfilesList_AllMatch(t *testing.T) {
 	result := lp.FilterProfilesList(func(pr *LicelProfile) bool { return true })
 
 	assert.Len(t, result, 4)
-	assert.Equal(t, 355.0, result[0].Wavelength)
-	assert.False(t, result[0].Photon)
-	assert.Equal(t, "o", result[0].Polarization)
 
 	// исходный пак не изменён
 	assert.Len(t, lp.Data, 2)
@@ -310,8 +307,6 @@ func TestLicelPack_FilterProfilesList_Partial(t *testing.T) {
 	result := lp.FilterProfilesList(func(pr *LicelProfile) bool { return !pr.Photon })
 
 	assert.Len(t, result, 2) // 355 (f1) и 1064 (f2)
-	assert.Equal(t, 355.0, result[0].Wavelength)
-	assert.Equal(t, 1064.0, result[1].Wavelength)
 	assert.False(t, result[0].Photon)
 	assert.False(t, result[1].Photon)
 

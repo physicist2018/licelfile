@@ -177,7 +177,6 @@ profiles355 := pack.FilterProfilesList(func(pr *licelformat.LicelProfile) bool {
 |----------|-----------|
 | `LoadLicelFile` | `(fname string) (LicelFile, error)` |
 | `LoadLicelFileFromReader` | `(r io.Reader) (LicelFile, error)` |
-| `NewLicelProfile` | `(line string) (LicelProfile, error)` |
 | `NewLicelPack` | `(mask string) (*LicelPack, error)` |
 | `NewLicelPackFromZip` | `(zipPath string) (*LicelPack, error)` |
 
@@ -189,11 +188,6 @@ profiles355 := pack.FilterProfilesList(func(pr *licelformat.LicelProfile) bool {
 | `WriteTo` | `*LicelFile` | `(w io.Writer, fname string) error` |
 | `SelectProfile` | `*LicelFile` | `(isPhoton bool, wavelength float64, polarization string) (LicelProfile, bool)` |
 | `SetMaxDist` | `*LicelFile` | `(alt float64) error` |
-| `FormatFirstLine` | `*LicelFile` | `(fname string) string` |
-| `FormatSecondLine` | `*LicelFile` | `() string` |
-| `FormatThirdLine` | `*LicelFile` | `() string` |
-| `Metadata` | `*LicelProfile` | `() string` |
-| `ProfileRaw` | `*LicelProfile` | `() ([]byte, error)` |
 | `SetMaxDist` | `*LicelProfile` | `(alt float64) error` |
 | `Save` | `*LicelPack` | `() error` |
 | `SaveToZip` | `*LicelPack` | `(zipPath string) error` |

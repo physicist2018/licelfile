@@ -35,8 +35,8 @@ type LicelProfile struct {
 	Data         []float64               `json:"data"`          // Данные
 }
 
-// NewLicelProfile — parse string line into LicelProfile
-func NewLicelProfile(line string) (LicelProfile, error) {
+// newLicelProfile — parse string line into LicelProfile
+func newLicelProfile(line string) (LicelProfile, error) {
 	items := strings.Fields(line)
 	if len(items) < 16 {
 		return LicelProfile{}, fmt.Errorf("profile header: expected at least 16 fields, got %d", len(items))
@@ -138,8 +138,8 @@ func NewLicelProfile(line string) (LicelProfile, error) {
 	}, nil
 }
 
-// Metadata — возвращает строку с метаданными канала для записи в заголовок файла
-func (lp *LicelProfile) Metadata() string {
+// metadata — возвращает строку с метаданными канала для записи в заголовок файла
+func (lp *LicelProfile) metadata() string {
 	var s string
 	if lp.Photon {
 		s = fmt.Sprintf(" %1d %1d %1d %05d %1d %04d %04.2f %05d.%1s %0d %0d %02d %03d %02d %06d %05.4f %2s%01d",
@@ -166,8 +166,8 @@ func (lp *LicelProfile) scaleFactor() float64 {
 	return lp.DiscrLevel * 1000.0 / float64(adcScale*lp.NShots)
 }
 
-// ProfileRaw — возвращает unscaled бинарное представление данных канала
-func (lp *LicelProfile) ProfileRaw() ([]byte, error) {
+// profileRaw — возвращает unscaled бинарное представление данных канала
+func (lp *LicelProfile) profileRaw() ([]byte, error) {
 	scale := lp.scaleFactor()
 	unscaled := make([]float64, len(lp.Data))
 	for i, v := range lp.Data {

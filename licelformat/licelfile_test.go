@@ -260,7 +260,7 @@ func TestLicelFile_Save_InvalidPath(t *testing.T) {
 
 func TestFormatFirstLine(t *testing.T) {
 	lf := LicelFile{}
-	s := lf.FormatFirstLine("myfile.dat")
+	s := lf.formatFirstLine("myfile.dat")
 	assert.Contains(t, s, "myfile.dat")
 	assert.Contains(t, s, "\r\n")
 }
@@ -275,7 +275,7 @@ func TestFormatSecondLine(t *testing.T) {
 		Latitude:              43.1,
 		Zenith:                50,
 	}
-	s := lf.FormatSecondLine()
+	s := lf.formatSecondLine()
 	assert.Contains(t, s, "Test")
 	assert.Contains(t, s, "0131.9")
 	assert.Contains(t, s, "0043.1")
@@ -292,7 +292,7 @@ func TestFormatThirdLine(t *testing.T) {
 		Laser3NShots: 0,
 		Laser3Freq:   10,
 	}
-	s := lf.FormatThirdLine()
+	s := lf.formatThirdLine()
 	assert.Contains(t, s, "0002001")
 	assert.Contains(t, s, "0020")
 	assert.Contains(t, s, "12")

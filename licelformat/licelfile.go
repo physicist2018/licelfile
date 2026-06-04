@@ -146,7 +146,7 @@ func loadFromReader(r *bufio.Reader) (LicelFile, error) {
 		if err != nil {
 			return licf, fmt.Errorf("reading profile header %d: %w", i, err)
 		}
-		licf.Profiles[i], err = NewLicelProfile(header)
+		licf.Profiles[i], err = newLicelProfile(header)
 		if err != nil {
 			return licf, fmt.Errorf("parsing profile %d: %w", i, err)
 		}
@@ -254,17 +254,17 @@ func (lf *LicelFile) SetMaxDist(alt float64) error {
 func (lf *LicelFile) WriteTo(w io.Writer, fname string) error {
 	bw := bufio.NewWriter(w)
 
-	if _, err := bw.WriteString(lf.FormatFirstLine(fname)); err != nil {
+	if _, err := bw.WriteString(lf.formatFirstLine(fname)); err != nil {
 		return fmt.Errorf("writing line 1: %w", err)
 	}
-	if _, err := bw.WriteString(lf.FormatSecondLine()); err != nil {
+	if _, err := bw.WriteString(lf.formatSecondLine()); err != nil {
 		return fmt.Errorf("writing line 2: %w", err)
 	}
-	if _, err := bw.WriteString(lf.FormatThirdLine()); err != nil {
+	if _, err := bw.WriteString(lf.formatThirdLine()); err != nil {
 		return fmt.Errorf("writing line 3: %w", err)
 	}
 	for i, p := range lf.Profiles {
-		if _, err := bw.WriteString(p.Metadata()); err != nil {
+		if _, err := bw.WriteString(p.metadata()); err != nil {
 			return fmt.Errorf("writing metadata for profile %d: %w", i, err)
 		}
 	}
@@ -272,7 +272,7 @@ func (lf *LicelFile) WriteTo(w io.Writer, fname string) error {
 		return fmt.Errorf("writing header/body separator: %w", err)
 	}
 	for i, p := range lf.Profiles {
-		data, err := p.ProfileRaw()
+		data, err := p.profileRaw()
 		if err != nil {
 			return fmt.Errorf("serializing profile %d: %w", i, err)
 		}
@@ -299,12 +299,12 @@ func (lf *LicelFile) Save(fname string) error {
 }
 
 // FormatFirstLine — форматирует первую строку LICEL-файла
-func (lf *LicelFile) FormatFirstLine(fname string) string {
+func (lf *LicelFile) formatFirstLine(fname string) string {
 	return fmt.Sprintf(" %-77s\r\n", fname)
 }
 
 // FormatSecondLine — форматирует вторую строку LICEL-файла (метаданные измерения)
-func (lf *LicelFile) FormatSecondLine() string {
+func (lf *LicelFile) formatSecondLine() string {
 	s := fmt.Sprintf(" %s %s %s %s %s %04.0f %06.1f %06.1f %02.0f",
 		lf.MeasurementSite,
 		lf.MeasurementStartTime.Local().Format("02/01/2006"),
@@ -320,7 +320,7 @@ func (lf *LicelFile) FormatSecondLine() string {
 }
 
 // FormatThirdLine — форматирует третью строку LICEL-файла (параметры лазеров)
-func (lf *LicelFile) FormatThirdLine() string {
+func (lf *LicelFile) formatThirdLine() string {
 	s := fmt.Sprintf(" %07d %04d %07d %04d %02d %07d %04d",
 		lf.Laser1NShots, lf.Laser1Freq,
 		lf.Laser2NShots, lf.Laser2Freq,
