@@ -217,9 +217,9 @@ func (lp *LicelPack) SelectProfiles(isPhoton bool, wavelength float64, polarizat
 // Glue склеивает аналоговый и цифровой каналы для каждого файла в паке.
 // Для каждого файла вызывается LicelFile.Glue, и если ошибок нет,
 // полученный склеенный профиль добавляется в Profiles этого файла.
-func (lp *LicelPack) Glue(wvl float64, h1, h2 float64) error {
+func (lp *LicelPack) Glue(wvl float64, h1, h2 float64, polarization string) error {
 	for fname, lf := range lp.Data {
-		glued, err := lf.Glue(wvl, h1, h2)
+		glued, err := lf.Glue(wvl, h1, h2, polarization)
 		if err != nil {
 			return fmt.Errorf("%s: %w", fname, err)
 		}
@@ -227,7 +227,7 @@ func (lp *LicelPack) Glue(wvl float64, h1, h2 float64) error {
 		// Ищем существующий склеенный профиль для той же длины волны и поляризации
 		replaced := false
 		for i, p := range lf.Profiles {
-			if p.IsGlued() && p.Wavelength == wvl {
+			if p.IsGlued() && p.Wavelength == wvl && p.Polarization == polarization {
 				lf.Profiles[i] = glued
 				replaced = true
 				break

@@ -256,12 +256,12 @@ func (lf *LicelFile) SelectProfile(isPhoton bool, wavelength float64, polarizati
 //     - h < h1: данные аналогового канала
 //     - h1 ≤ h ≤ h2: 0.5*(analog + k*photon)
 //     - h > h2: k*photon
-func (lf *LicelFile) Glue(wvl float64, h1, h2 float64) (LicelProfile, error) {
-	analog, ok := lf.SelectProfile(false, wvl, "")
+func (lf *LicelFile) Glue(wvl float64, h1, h2 float64, polarization string) (LicelProfile, error) {
+	analog, ok := lf.SelectProfile(false, wvl, polarization)
 	if !ok {
 		return LicelProfile{}, fmt.Errorf("glue: analog channel not found for wavelength %.0f", wvl)
 	}
-	photon, ok := lf.SelectProfile(true, wvl, "")
+	photon, ok := lf.SelectProfile(true, wvl, polarization)
 	if !ok {
 		return LicelProfile{}, fmt.Errorf("glue: photon channel not found for wavelength %.0f", wvl)
 	}
