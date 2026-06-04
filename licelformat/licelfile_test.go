@@ -201,9 +201,9 @@ func TestLicelFile_SetMaxDist_Error(t *testing.T) {
 func TestLicelFile_SelectProfile(t *testing.T) {
 	lf := LicelFile{
 		Profiles: LicelProfilesList{
-			{Photon: false, Wavelength: 355, Polarization: "o"},
-			{Photon: true, Wavelength: 532, Polarization: "p"},
-			{Photon: true, Wavelength: 1064, Polarization: "s"},
+			{DeviceID: "BT", Photon: false, Wavelength: 355, Polarization: "o"},
+			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p"},
+			{DeviceID: "BC", Photon: true, Wavelength: 1064, Polarization: "s"},
 		},
 	}
 
@@ -311,8 +311,8 @@ func TestLicelFile_Glue_Success(t *testing.T) {
 
 	lf := LicelFile{
 		Profiles: LicelProfilesList{
-			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: analogData, Active: true, LaserType: 1, NShots: 2001, DiscrLevel: 0.5},
-			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: photonData, Active: true, LaserType: 1, NShots: 2000, DiscrLevel: 0.005},
+			{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: analogData, Active: true, LaserType: 1, NShots: 2001, DiscrLevel: 0.5},
+			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: photonData, Active: true, LaserType: 1, NShots: 2000, DiscrLevel: 0.005},
 		},
 	}
 
@@ -355,7 +355,7 @@ func TestLicelFile_Glue_Success(t *testing.T) {
 func TestLicelFile_Glue_MissingAnalog(t *testing.T) {
 	lf := LicelFile{
 		Profiles: LicelProfilesList{
-			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
+			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
 		},
 	}
 	_, err := lf.Glue(532, "p", 10, 50)
@@ -366,7 +366,7 @@ func TestLicelFile_Glue_MissingAnalog(t *testing.T) {
 func TestLicelFile_Glue_MissingPhoton(t *testing.T) {
 	lf := LicelFile{
 		Profiles: LicelProfilesList{
-			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
+			{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
 		},
 	}
 	_, err := lf.Glue(532, "p", 10, 50)
@@ -377,8 +377,8 @@ func TestLicelFile_Glue_MissingPhoton(t *testing.T) {
 func TestLicelFile_Glue_InvalidRange(t *testing.T) {
 	lf := LicelFile{
 		Profiles: LicelProfilesList{
-			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
-			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
+			{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
+			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
 		},
 	}
 	_, err := lf.Glue(532, "p", 50, 10)
@@ -390,8 +390,8 @@ func TestLicelFile_Glue_InvalidRange(t *testing.T) {
 func TestLicelFile_Glue_H1OutOfRange(t *testing.T) {
 	lf := LicelFile{
 		Profiles: LicelProfilesList{
-			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 10)},
-			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 10)},
+			{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 10)},
+			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 10)},
 		},
 	}
 	_, err := lf.Glue(532, "p", 200, 300) // h1 maps to idx 26, exceeds dataLen 10
@@ -401,8 +401,8 @@ func TestLicelFile_Glue_H1OutOfRange(t *testing.T) {
 func TestLicelFile_Glue_AllZeroPhoton(t *testing.T) {
 	lf := LicelFile{
 		Profiles: LicelProfilesList{
-			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300, 400}},
-			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{0, 0, 0, 0}},
+			{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300, 400}},
+			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{0, 0, 0, 0}},
 		},
 	}
 	_, err := lf.Glue(532, "p", 0, 22) // idx2=2, dataLen=4 — попадает в диапазон, но photon=0
@@ -414,8 +414,8 @@ func TestLicelFile_Glue_DataLengthMismatch(t *testing.T) {
 	// photon shorter than analog — uses min length
 	lf := LicelFile{
 		Profiles: LicelProfilesList{
-			{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300, 400, 500, 600}},
-			{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{10, 20, 30}},
+			{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300, 400, 500, 600}},
+			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{10, 20, 30}},
 		},
 	}
 	got, err := lf.Glue(532, "p", 0, 15) // idx2=2, fits in 3

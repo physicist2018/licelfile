@@ -223,7 +223,19 @@ func (lp *LicelPack) Glue(wvl float64, polarization string, h1, h2 float64) erro
 		if err != nil {
 			return fmt.Errorf("%s: %w", fname, err)
 		}
-		lf.Profiles = append(lf.Profiles, glued)
+
+		// Ищем существующий склеенный профиль для той же длины волны и поляризации
+		replaced := false
+		for i, p := range lf.Profiles {
+			if p.IsGlued() && p.Wavelength == wvl && p.Polarization == polarization {
+				lf.Profiles[i] = glued
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			lf.Profiles = append(lf.Profiles, glued)
+		}
 		lf.NDatasets = len(lf.Profiles)
 		lp.Data[fname] = lf
 	}

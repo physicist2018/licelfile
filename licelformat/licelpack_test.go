@@ -23,14 +23,14 @@ func TestSelectProfiles(t *testing.T) {
 		Data: map[string]LicelFile{
 			"file1": {
 				Profiles: LicelProfilesList{
-					{Wavelength: 355, Photon: false, Polarization: "o"},
-					{Wavelength: 532, Photon: true, Polarization: "p"},
+					{DeviceID: "BT", Wavelength: 355, Photon: false, Polarization: "o"},
+					{DeviceID: "BC", Wavelength: 532, Photon: true, Polarization: "p"},
 				},
 			},
 			"file2": {
 				Profiles: LicelProfilesList{
-					{Wavelength: 355, Photon: true, Polarization: "s"},
-					{Wavelength: 355, Photon: false, Polarization: "p"},
+					{DeviceID: "BC", Wavelength: 355, Photon: true, Polarization: "s"},
+					{DeviceID: "BT", Wavelength: 355, Photon: false, Polarization: "p"},
 				},
 			},
 		},
@@ -523,8 +523,8 @@ func TestLicelPack_Glue_Success(t *testing.T) {
 		Data: map[string]LicelFile{
 			"f1": {
 				Profiles: LicelProfilesList{
-					{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: analogData, LaserType: 1, NShots: 2001, DiscrLevel: 0.5},
-					{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: photonData, LaserType: 1, NShots: 2000, DiscrLevel: 0.005},
+					{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: analogData, LaserType: 1, NShots: 2001, DiscrLevel: 0.5},
+					{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: photonData, LaserType: 1, NShots: 2000, DiscrLevel: 0.005},
 				},
 				NDatasets: 2,
 			},
@@ -548,15 +548,15 @@ func TestLicelPack_Glue_MultipleFiles(t *testing.T) {
 		Data: map[string]LicelFile{
 			"f1": {
 				Profiles: LicelProfilesList{
-					{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000}},
-					{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}},
+					{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000}},
+					{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}},
 				},
 				NDatasets: 2,
 			},
 			"f2": {
 				Profiles: LicelProfilesList{
-					{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{200, 300, 400, 500}},
-					{Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{20, 30, 40, 50}},
+					{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{200, 300, 400, 500}},
+					{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{20, 30, 40, 50}},
 				},
 				NDatasets: 2,
 			},
@@ -577,7 +577,7 @@ func TestLicelPack_Glue_Error(t *testing.T) {
 		Data: map[string]LicelFile{
 			"f1": {
 				Profiles: LicelProfilesList{
-					{Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300}},
+					{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{100, 200, 300}},
 				},
 				NDatasets: 1,
 			},
@@ -594,6 +594,49 @@ func TestLicelPack_Glue_EmptyPack(t *testing.T) {
 	lp := &LicelPack{Data: map[string]LicelFile{}}
 	err := lp.Glue(532, "p", 0, 15)
 	assert.NoError(t, err)
+}
+
+func TestLicelPack_Glue_ReplacesExisting(t *testing.T) {
+	n := 10
+	analogData := make([]float64, n)
+	photonData := make([]float64, n)
+	for i := 0; i < n; i++ {
+		analogData[i] = float64(1000 + i*10)
+		photonData[i] = float64(200 + i)
+	}
+
+	// Первый вызов — добавляет BG
+	lp := &LicelPack{
+		Data: map[string]LicelFile{
+			"f1": {
+				Profiles: LicelProfilesList{
+					{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: analogData, LaserType: 1, NShots: 2001, DiscrLevel: 0.5},
+					{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, NDataPoints: n, Data: photonData, LaserType: 1, NShots: 2000, DiscrLevel: 0.005},
+				},
+				NDatasets: 2,
+			},
+		},
+	}
+
+	err := lp.Glue(532, "p", 15, 45)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(lp.Data["f1"].Profiles))
+	require.Equal(t, "BG", lp.Data["f1"].Profiles[2].DeviceID)
+
+	oldBG := lp.Data["f1"].Profiles[2]
+
+	// Второй вызов — заменяет, а не добавляет четвёртый профиль
+	err = lp.Glue(532, "p", 30, 60)
+	require.NoError(t, err)
+	assert.Equal(t, 3, len(lp.Data["f1"].Profiles), "должен быть 3 профиля, а не 4")
+	assert.Equal(t, 3, lp.Data["f1"].NDatasets)
+
+	glued := lp.Data["f1"].Profiles[2]
+	assert.Equal(t, "BG", glued.DeviceID)
+	// Данные в зоне склейки должны отличаться (другой k)
+	// Первый вызов: h1=15 → idx1=2, h2=45 → idx2=6 — data[4] в glue zone
+	// Второй вызов: h1=30 → idx1=4, h2=60 → idx2=8 — data[4] в glue zone, но k другой
+	assert.NotEqual(t, oldBG.Data[4], glued.Data[4], "BG данные в зоне склейки должны измениться при новом h1/h2")
 }
 
 // --- SaveToZip with compression levels ---
