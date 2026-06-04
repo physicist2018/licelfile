@@ -2,6 +2,17 @@
 
 ## Changelog
 
+## [v2.4.0] — 2026-06-04
+
+### Added
+
+- **`LicelProfile.IsPhoton() bool`** — возвращает `true`, если `DeviceID == "BC"` (фотонный канал).
+- **`LicelProfile.IsAnalog() bool`** — возвращает `true`, если `DeviceID == "BT"` (аналоговый канал).
+- **`LicelProfile.IsGlued() bool`** — возвращает `true`, если `DeviceID == "BG"` (склеенный канал).
+- **Тесты**: 6 тестов `TestLicelProfile_IsPhoton_*`, `TestLicelProfile_IsAnalog_*`, `TestLicelProfile_IsGlued_*`.
+
+---
+
 ## [v2.3.0] — 2026-06-04
 
 ### Added

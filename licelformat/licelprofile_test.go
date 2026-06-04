@@ -166,6 +166,44 @@ func TestLicelProfile_SetMaxDist_ZeroBinWidth(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// --- IsPhoton / IsAnalog / IsGlued ---
+
+func TestLicelProfile_IsPhoton_True(t *testing.T) {
+	pr := LicelProfile{DeviceID: "BC"}
+	assert.True(t, pr.IsPhoton())
+}
+
+func TestLicelProfile_IsPhoton_False(t *testing.T) {
+	pr := LicelProfile{DeviceID: "BT"}
+	assert.False(t, pr.IsPhoton())
+	pr2 := LicelProfile{DeviceID: "BG"}
+	assert.False(t, pr2.IsPhoton())
+}
+
+func TestLicelProfile_IsAnalog_True(t *testing.T) {
+	pr := LicelProfile{DeviceID: "BT"}
+	assert.True(t, pr.IsAnalog())
+}
+
+func TestLicelProfile_IsAnalog_False(t *testing.T) {
+	pr := LicelProfile{DeviceID: "BC"}
+	assert.False(t, pr.IsAnalog())
+	pr2 := LicelProfile{DeviceID: "BG"}
+	assert.False(t, pr2.IsAnalog())
+}
+
+func TestLicelProfile_IsGlued_True(t *testing.T) {
+	pr := LicelProfile{DeviceID: "BG"}
+	assert.True(t, pr.IsGlued())
+}
+
+func TestLicelProfile_IsGlued_False(t *testing.T) {
+	pr := LicelProfile{DeviceID: "BC"}
+	assert.False(t, pr.IsGlued())
+	pr2 := LicelProfile{DeviceID: "BT"}
+	assert.False(t, pr2.IsGlued())
+}
+
 // --- btoi ---
 
 func TestBtoi(t *testing.T) {

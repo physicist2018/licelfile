@@ -187,6 +187,21 @@ func float64toInt32Bytes(data []float64) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// IsPhoton возвращает true, если профиль является фотонным каналом (DeviceID == "BC").
+func (lp *LicelProfile) IsPhoton() bool {
+	return lp.DeviceID == "BC"
+}
+
+// IsAnalog возвращает true, если профиль является аналоговым каналом (DeviceID == "BT").
+func (lp *LicelProfile) IsAnalog() bool {
+	return lp.DeviceID == "BT"
+}
+
+// IsGlued возвращает true, если профиль является склеенным каналом (DeviceID == "BG").
+func (lp *LicelProfile) IsGlued() bool {
+	return lp.DeviceID == "BG"
+}
+
 // SetMaxDist обрезает данные профиля до дальности alt (метры).
 // idx = alt / BinWidth. Ошибка если idx ≤ 0 или idx > NDataPoints.
 func (lp *LicelProfile) SetMaxDist(alt float64) error {
