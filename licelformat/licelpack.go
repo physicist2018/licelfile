@@ -177,6 +177,16 @@ func (lp *LicelPack) FilterProfiles(cond func(pr *LicelProfile) bool) LicelPack 
 	return result
 }
 
+// ToProfilesList возвращает все профили из всех файлов пакета в виде одного плоского списка.
+// Исходный пак не изменяется.
+func (lp *LicelPack) ToProfilesList() LicelProfilesList {
+	var result LicelProfilesList
+	for _, lf := range lp.Data {
+		result = append(result, lf.Profiles...)
+	}
+	return result
+}
+
 // FilterProfilesList возвращает объединённый список профилей из всех файлов пакета, удовлетворяющих cond.
 // Исходный пак не изменяется.
 func (lp *LicelPack) FilterProfilesList(cond func(pr *LicelProfile) bool) LicelProfilesList {

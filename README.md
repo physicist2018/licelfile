@@ -155,6 +155,7 @@ profiles := pack.SelectProfiles(true, 1064.0, "s")
 | `Filter` | `*LicelPack` | `(cond func(lf *LicelFile) bool) LicelPack` |
 | `FilterProfiles` | `*LicelPack` | `(cond func(pr *LicelProfile) bool) LicelPack` |
 | `FilterProfilesList` | `*LicelPack` | `(cond func(pr *LicelProfile) bool) LicelProfilesList` |
+| `ToProfilesList` | `*LicelPack` | `() LicelProfilesList` |
 | `SetMaxDist` | `*LicelPack` | `(alt float64) error` |
 
 ## License
