@@ -531,7 +531,7 @@ func TestLicelPack_Glue_Success(t *testing.T) {
 		},
 	}
 
-	err := lp.Glue(532, 15, 45)
+	err := lp.Glue(532, 15, 45, "p")
 	require.NoError(t, err)
 
 	f1 := lp.Data["f1"]
@@ -563,7 +563,7 @@ func TestLicelPack_Glue_MultipleFiles(t *testing.T) {
 		},
 	}
 
-	err := lp.Glue(532, 0, 22) // idx2=2 для f1 (max=2.99), idx2=2 для f2 (max=2.99)
+	err := lp.Glue(532, 0, 22, "p") // idx2=2 для f1 (max=2.99), idx2=2 для f2 (max=2.99)
 	require.NoError(t, err)
 
 	assert.Equal(t, 3, len(lp.Data["f1"].Profiles))
@@ -584,7 +584,7 @@ func TestLicelPack_Glue_Error(t *testing.T) {
 		},
 	}
 
-	err := lp.Glue(532, 0, 15)
+	err := lp.Glue(532, 0, 15, "p")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "f1")
 	assert.Contains(t, err.Error(), "photon channel not found")
@@ -592,7 +592,7 @@ func TestLicelPack_Glue_Error(t *testing.T) {
 
 func TestLicelPack_Glue_EmptyPack(t *testing.T) {
 	lp := &LicelPack{Data: map[string]LicelFile{}}
-	err := lp.Glue(532, 0, 15)
+	err := lp.Glue(532, 0, 15, "p")
 	assert.NoError(t, err)
 }
 
@@ -618,7 +618,7 @@ func TestLicelPack_Glue_ReplacesExisting(t *testing.T) {
 		},
 	}
 
-	err := lp.Glue(532, 15, 45)
+	err := lp.Glue(532, 15, 45, "p")
 	require.NoError(t, err)
 	require.Equal(t, 3, len(lp.Data["f1"].Profiles))
 	require.Equal(t, "BG", lp.Data["f1"].Profiles[2].DeviceID)
@@ -626,7 +626,7 @@ func TestLicelPack_Glue_ReplacesExisting(t *testing.T) {
 	oldBG := lp.Data["f1"].Profiles[2]
 
 	// Второй вызов — заменяет, а не добавляет четвёртый профиль
-	err = lp.Glue(532, 30, 60)
+	err = lp.Glue(532, 30, 60, "p")
 	require.NoError(t, err)
 	assert.Equal(t, 3, len(lp.Data["f1"].Profiles), "должен быть 3 профиля, а не 4")
 	assert.Equal(t, 3, lp.Data["f1"].NDatasets)

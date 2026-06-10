@@ -179,6 +179,7 @@ profiles355 := pack.FilterProfilesList(func(pr *licelformat.LicelProfile) bool {
 | `LoadLicelFileFromReader` | `(r io.Reader) (LicelFile, error)` |
 | `NewLicelPack` | `(mask string) (*LicelPack, error)` |
 | `NewLicelPackFromZip` | `(zipPath string) (*LicelPack, error)` |
+| `LoadLicelPackFromNetCDF3` | `(fname string) (*LicelPack, error)` |
 
 ### Methods
 
@@ -187,7 +188,7 @@ profiles355 := pack.FilterProfilesList(func(pr *licelformat.LicelProfile) bool {
 | `Save` | `*LicelFile` | `(fname string) error` |
 | `WriteTo` | `*LicelFile` | `(w io.Writer, fname string) error` |
 | `SelectProfile` | `*LicelFile` | `(isPhoton bool, wavelength float64, polarization string) (LicelProfile, bool)` |
-| `Glue` | `*LicelFile` | `(wvl float64, h1, h2 float64) (LicelProfile, error)` |
+| `Glue` | `*LicelFile` | `(wvl float64, h1, h2 float64, polarization string) (LicelProfile, error)` |
 | `SetMaxDist` | `*LicelFile` | `(alt float64) error` |
 | `IsPhoton` | `*LicelProfile` | `() bool` |
 | `IsAnalog` | `*LicelProfile` | `() bool` |
@@ -201,13 +202,14 @@ profiles355 := pack.FilterProfilesList(func(pr *licelformat.LicelProfile) bool {
 | `FilterProfilesList` | `*LicelPack` | `(cond func(pr *LicelProfile) bool) LicelProfilesList` |
 | `ToProfilesList` | `*LicelPack` | `() LicelProfilesList` |
 | `SetMaxDist` | `*LicelPack` | `(alt float64) error` |
-| `Glue` | `*LicelPack` | `(wvl float64, h1, h2 float64) error` |
+| `Glue` | `*LicelPack` | `(wvl float64, h1, h2 float64, polarization string) error` |
+| `SaveToNetCDF3` | `*LicelPack` | `(fname string) error` |
 
 ### Glue analog and photon channels
 
 ```go
 // In a single file: glue 355nm analog+photon, compute ratio in [500; 2000]m
-glued, err := lf.Glue(355.0, 500.0, 2000.0)
+glued, err := lf.Glue(355.0, 500.0, 2000.0, "")
 if err != nil {
     log.Fatal(err)
 }
@@ -215,9 +217,26 @@ if err != nil {
 // glued.IsGlued() == true
 
 // In a whole pack: glue every file
-if err := pack.Glue(355.0, 500.0, 2000.0); err != nil {
+if err := pack.Glue(355.0, 500.0, 2000.0, ""); err != nil {
     log.Fatal(err)
 }
+```
+
+### NetCDF3 persistence
+
+```go
+// Save a pack to NetCDF3 (CDF) file
+if err := pack.SaveToNetCDF3("session.nc"); err != nil {
+    log.Fatal(err)
+}
+
+// Load a pack from NetCDF3 file
+pack2, err := licelformat.LoadLicelPackFromNetCDF3("session.nc")
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Println(len(pack2.Data)) // number of files
 ```
 
 ## License

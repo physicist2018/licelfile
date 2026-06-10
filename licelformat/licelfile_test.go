@@ -316,7 +316,7 @@ func TestLicelFile_Glue_Success(t *testing.T) {
 		},
 	}
 
-	got, err := lf.Glue(532, 150, 300)
+	got, err := lf.Glue(532, 150, 300, "p")
 	require.NoError(t, err)
 
 	assert.Equal(t, "BG", got.DeviceID)
@@ -358,7 +358,7 @@ func TestLicelFile_Glue_MissingAnalog(t *testing.T) {
 			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
 		},
 	}
-	_, err := lf.Glue(532, 10, 50)
+	_, err := lf.Glue(532, 10, 50, "p")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "analog channel not found")
 }
@@ -369,7 +369,7 @@ func TestLicelFile_Glue_MissingPhoton(t *testing.T) {
 			{DeviceID: "BT", Photon: false, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
 		},
 	}
-	_, err := lf.Glue(532, 10, 50)
+	_, err := lf.Glue(532, 10, 50, "p")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "photon channel not found")
 }
@@ -381,7 +381,7 @@ func TestLicelFile_Glue_InvalidRange(t *testing.T) {
 			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 100)},
 		},
 	}
-	_, err := lf.Glue(532, 50, 10)
+	_, err := lf.Glue(532, 50, 10, "p")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "h1")
 	assert.Contains(t, err.Error(), "must be less than h2")
@@ -394,7 +394,7 @@ func TestLicelFile_Glue_H1OutOfRange(t *testing.T) {
 			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: make([]float64, 10)},
 		},
 	}
-	_, err := lf.Glue(532, 200, 300) // h1 maps to idx 26, exceeds dataLen 10
+	_, err := lf.Glue(532, 200, 300, "p") // h1 maps to idx 26, exceeds dataLen 10
 	assert.Error(t, err)
 }
 
@@ -405,7 +405,7 @@ func TestLicelFile_Glue_AllZeroPhoton(t *testing.T) {
 			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{0, 0, 0, 0}},
 		},
 	}
-	_, err := lf.Glue(532, 0, 22) // idx2=2, dataLen=4 — попадает в диапазон, но photon=0
+	_, err := lf.Glue(532, 0, 22, "p") // idx2=2, dataLen=4 — попадает в диапазон, но photon=0
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "all photon data values are zero")
 }
@@ -418,7 +418,7 @@ func TestLicelFile_Glue_DataLengthMismatch(t *testing.T) {
 			{DeviceID: "BC", Photon: true, Wavelength: 532, Polarization: "p", BinWidth: 7.5, Data: []float64{10, 20, 30}},
 		},
 	}
-	got, err := lf.Glue(532, 0, 15) // idx2=2, fits in 3
+	got, err := lf.Glue(532, 0, 15, "p") // idx2=2, fits in 3
 	require.NoError(t, err)
 	assert.Equal(t, 3, len(got.Data))
 }

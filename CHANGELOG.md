@@ -2,6 +2,22 @@
 
 ## Changelog
 
+## [v2.5.0] — 2026-06-10
+
+### Added
+
+- **`LicelPack.SaveToNetCDF3(fname string) error`** — сохраняет `LicelPack` в NetCDF3 (CDF) файл. Глобальные атрибуты: `start_time`, `stop_time` (ISO 8601). Размерности: `nfiles`, `nprofiles`, `ndata`. File-level переменные: `filename`, `measurement_site`, `measurement_start/stop_time`, `altitude`, `longitude`, `latitude`, `zenith`, `laser1/2/3_nshots/freq`, `ndatasets`. Profile-level переменные: `file_index`, `active`, `photon`, `laser_type`, `n_data_points`, `reserved_0/1/2`, `high_voltage`, `bin_width`, `wavelength`, `polarization`, `bin_shift`, `dec_bin_shift`, `adc_bits`, `n_shots`, `discr_level`, `device_id`, `n_crate`, `data_offset`, `data_count`. Данные профилей — плоский `profile_data` (float64).
+- **`LoadLicelPackFromNetCDF3(fname string) (*LicelPack, error)`** — загружает `LicelPack` из NetCDF3 (CDF) файла.
+- **Зависимость**: `github.com/batchatco/go-native-netcdf` (чистая Go реализация NetCDF4, используется CDF-режим).
+- **Тесты**: `TestLicelPack_SaveToNetCDF3_Roundtrip` (полный roundtrip 2 файлов с профилями), `TestLicelPack_SaveToNetCDF3_Empty` (пустой пак), `TestLicelPack_SaveToNetCDF3_FileWithGluedProfile` (BG-профиль).
+
+### Changed
+
+- **`LicelFile.Glue`**: параметр `polarization string` восстановлен. Сигнатура: `(wvl float64, h1, h2 float64, polarization string) (LicelProfile, error)`. Передайте `""`, чтобы подходила любая поляризация.
+- **`LicelPack.Glue`**: параметр `polarization string` восстановлен. Сигнатура: `(wvl float64, h1, h2 float64, polarization string) error`.
+
+---
+
 ## [v2.4.3] — 2026-06-04
 
 ### Changed
