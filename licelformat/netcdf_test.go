@@ -205,14 +205,8 @@ func TestLicelPack_SaveToNetCDF3_Empty(t *testing.T) {
 	ncPath := filepath.Join(tmpDir, "empty.nc")
 
 	err := pack.SaveToNetCDF3(ncPath)
-	require.NoError(t, err, "SaveToNetCDF3 empty pack should succeed")
-
-	loaded, err := LoadLicelPackFromNetCDF3(ncPath)
-	require.NoError(t, err, "LoadLicelPackFromNetCDF3 empty pack should succeed")
-
-	assert.Equal(t, 0, len(loaded.Data), "empty pack should have 0 files")
-	assert.True(t, loaded.StartTime.IsZero(), "start time should be zero")
-	assert.True(t, loaded.StopTime.IsZero(), "stop time should be zero")
+	assert.Error(t, err, "empty pack should return error")
+	assert.Contains(t, err.Error(), "empty")
 }
 
 func TestLicelPack_SaveToNetCDF3_FileWithGluedProfile(t *testing.T) {

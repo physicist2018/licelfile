@@ -225,7 +225,7 @@ if err := pack.Glue(355.0, 500.0, 2000.0, ""); err != nil {
 ### NetCDF3 persistence
 
 ```go
-// Save a pack to NetCDF3 (CDF) file
+// Save a pack to NetCDF3 file (CF-1.8 conventions)
 if err := pack.SaveToNetCDF3("session.nc"); err != nil {
     log.Fatal(err)
 }
@@ -238,6 +238,24 @@ if err != nil {
 
 fmt.Println(len(pack2.Data)) // number of files
 ```
+
+**NetCDF schema**:
+
+| Dimension | Description |
+|-----------|-------------|
+| `file` | Number of files |
+| `profile` | Number of profiles |
+| `range` | Max range bins |
+
+File-level variables (`file` dim): `file_name`, `site`, `start_time`, `stop_time`, `longitude`, `latitude`, `altitude`, `zenith`, `laser{1,2,3}_{nshots,freq}`, `ndatasets`.
+
+Profile-level variables (`profile` dim): `file_index`, `wavelength`, `polarization`, `bin_width`, `nshots`, `device_id`, `is_photon`, `discr_level`, `adc_bits`, `active`, `laser_type`, `high_voltage`, `bin_shift`, `dec_bin_shift`, `n_crate`, `reserved_0/1/2`, `npoints`.
+
+Signal: `signal(profile, range)` — 2D float64, NaN-padded.
+
+Coordinate: `range` — bin centers in meters.
+
+Global attributes: `Conventions = CF-1.8`, `source = licelformat v1`, `licelformat_version = 1`.
 
 ## License
 

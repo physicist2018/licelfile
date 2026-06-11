@@ -2,6 +2,30 @@
 
 ## Changelog
 
+## [v2.6.0] — 2026-06-11
+
+### Changed
+
+- **`SaveToNetCDF3`**: полностью переписана схема хранения. Формат — NetCDF3 (Classic/64-bit).
+  - Размерности: `file`, `profile`, `range` (вместо `nfiles`, `nprofiles`, `ndata`).
+  - Время: float64 Unix timestamp (вместо строк RFC3339).
+  - Сигнал: 2D `signal(profile × range)` с NaN-заполнением (вместо плоского `profile_data` с `data_offset`/`data_count`).
+  - Добавлена координатная переменная `range` (метры).
+- **`LoadLicelPackFromNetCDF3`**: адаптирована под новую схему. Время восстанавливается через `time.Unix`.
+
+### Added
+
+- **Атрибуты переменных** (CF-1.8):
+  - Глобальные: `Conventions = CF-1.8`, `source = licelformat v1`, `licelformat_version = 1`.
+  - Все float-переменные: `FillValue = NaN`, `long_name`, `units`.
+  - Все int-переменные: `FillValue = -1`, `long_name`.
+  - `start_time`/`stop_time`: `calendar = standard`.
+  - `is_photon`: `flag_values = 0, 1`, `flag_meanings = analog photon_counting`.
+  - `signal`: `cell_methods = range: mean`.
+- **Тесты**: обновлены под новую схему (изменён тест пустого пакета на ожидание ошибки).
+
+---
+
 ## [v2.5.0] — 2026-06-10
 
 ### Added
